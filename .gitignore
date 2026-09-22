@@ -1,0 +1,46 @@
+# Build outputs
+/build/
+/app/build/
+/terminal-emulator/build/
+/terminal-view/build/
+*.apk
+*.aab
+
+# Gradle
+.gradle/
+local.properties
+
+# IDE
+/.idea/
+*.iml
+.DS_Store
+
+# Kotlin
+.kotlin/
+
+# Native build
+.externalNativeBuild/
+.cxx/
+
+# Generated VM artifacts (downloaded by fetch-artifacts.sh / CI)
+app/src/main/assets/vmlinuz-virt
+app/src/main/assets/initrd.img
+app/src/main/assets/kali-rootfs.squashfs
+app/src/main/assets/qemu/
+app/src/main/jniLibs/
+
+# Local planning / scratch dirs
+docs/superpowers/
+
+# Claude Code sessions
+.claude/
+
+# Misc
+*.tmp
+/captures/
+
+# Release signing keystore — never commit
+/podroid-release.jks
+
+# Visual companion (brainstorming sessions)
+.superpowers/
