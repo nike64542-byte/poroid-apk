@@ -24,7 +24,15 @@ android {
     defaultConfig {
         applicationId = "com.excp.podroid"
         minSdk = 26
-        targetSdk = 36
+        // MUST stay <= 28: Android 10+ (b/112357170) neverallows execve() of
+        // app_data_file for untrusted_app domains with targetSdk >= 29 (W^X —
+        // "loading executable code from a writable home directory"). We exec
+        // downloaded QEMU/launcher/bridge binaries out of filesDir; at
+        // targetSdk >= 29 that is SELinux EACCES (error=13) no matter the chmod.
+        // seapp_contexts maps minTargetSdkVersion=28 → untrusted_app_27, which
+        // the neverallow explicitly exempts. Sideloaded app — Play's targetSdk
+        // floor does not apply.
+        targetSdk = 28
         versionCode = 33
         versionName = "1.2.9"
         buildConfigField("String", "QEMU_VERSION", "\"$podroidQemuVersion\"")

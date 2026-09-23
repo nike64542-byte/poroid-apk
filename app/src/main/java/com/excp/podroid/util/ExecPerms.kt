@@ -26,7 +26,7 @@ object ExecPerms {
             String(
                 android.system.Os.getxattr(file.absolutePath, "security.selinux"),
                 Charsets.UTF_8
-            )
+            ).trim { it.code <= 32 }
         }.getOrDefault("?")
 
     /**

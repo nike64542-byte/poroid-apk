@@ -441,6 +441,14 @@ class SettingsViewModel @Inject constructor(
             appendLine("Build type:   ${BuildConfig.BUILD_TYPE}")
             appendLine("App ID:       ${BuildConfig.APPLICATION_ID}")
             appendLine("QEMU version: ${BuildConfig.QEMU_VERSION}")
+            // Process SELinux domain — decides the W^X execve policy:
+            // untrusted_app_27 (targetSdk<=28) may execve filesDir binaries,
+            // untrusted_app_29+ gets EACCES (error=13) by AOSP neverallow.
+            appendLine(
+                "SELinux dom:  " + runCatching {
+                    File("/proc/self/attr/current").readText().trim { it.code <= 32 }
+                }.getOrDefault("?")
+            )
             appendLine()
 
             appendLine("=== Device ===")
