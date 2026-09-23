@@ -67,8 +67,6 @@ jobs:
           echo "这些文件会被打进 APK 作为兜底。"
 
       - name: 构建 APK
-        env:
-          PODROID_BUILD_REV: ${{ github.sha }}
         run: |
           if [ -n "${{ secrets.PODROID_KEYSTORE_B64 }}" ]; then
             echo "构建签名 Release APK..."
@@ -84,6 +82,7 @@ jobs:
               -PpodroidVersionCode="${{ github.event.inputs.version_code || '33' }}"
           fi
         env:
+          PODROID_BUILD_REV: ${{ github.sha }}
           PODROID_KEYSTORE_B64: ${{ secrets.PODROID_KEYSTORE_B64 }}
           PODROID_KEYSTORE_PASS: ${{ secrets.PODROID_KEYSTORE_PASS }}
           PODROID_KEY_PASS: ${{ secrets.PODROID_KEY_PASS }}
