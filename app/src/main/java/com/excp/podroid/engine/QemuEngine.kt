@@ -771,8 +771,8 @@ class QemuEngine @Inject constructor(
         // as an orphan under PPID=1. If the launcher is missing (older deploys,
         // or not yet downloaded), fall back to spawning QEMU directly.
         val launcherDownloaded = File(context.filesDir, "libpodroid-launcher.so")
-        if (launcherDownloaded.exists() && !launcherDownloaded.canExecute()) {
-            launcherDownloaded.setExecutable(true, false)
+        if (launcherDownloaded.exists()) {
+            com.excp.podroid.util.ExecPerms.makeExecutable(launcherDownloaded)
         }
         val launcher = if (launcherDownloaded.exists()) launcherDownloaded
             else File(context.applicationInfo.nativeLibraryDir, "libpodroid-launcher.so")
@@ -831,7 +831,7 @@ class QemuEngine @Inject constructor(
         // .so defaults to 0644 (no +x), so self-heal the exec bit before launch.
         val downloaded = File(context.filesDir, "libqemu-system-aarch64.so")
         if (downloaded.exists()) {
-            if (!downloaded.canExecute()) downloaded.setExecutable(true, false)
+            com.excp.podroid.util.ExecPerms.makeExecutable(downloaded)
             return downloaded
         }
         val exe = File(context.applicationInfo.nativeLibraryDir, "libqemu-system-aarch64.so")

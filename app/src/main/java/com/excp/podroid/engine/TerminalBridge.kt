@@ -57,7 +57,7 @@ object TerminalBridge {
         // .so defaults to 0644 (no +x), so self-heal the exec bit before launch.
         val downloaded = File(context.filesDir, "libpodroid-bridge.so")
         if (downloaded.exists()) {
-            if (!downloaded.canExecute()) downloaded.setExecutable(true, false)
+            com.excp.podroid.util.ExecPerms.makeExecutable(downloaded)
             return downloaded
         }
         return File(context.applicationInfo.nativeLibraryDir, "libpodroid-bridge.so")

@@ -96,7 +96,7 @@ class SystemImageRepository @Inject constructor(
      */
     fun ensureExecutable(file: File): File {
         if (file.exists() && !file.canExecute()) {
-            file.setExecutable(true, false)
+            com.excp.podroid.util.ExecPerms.makeExecutable(file)
         }
         return file
     }
@@ -153,7 +153,7 @@ class SystemImageRepository @Inject constructor(
             // default to 0644 (no +x), which fails with error=13. Force the
             // exec bit on any .so we fetched.
             if (dest.name.endsWith(".so")) {
-                dest.setExecutable(true, false)
+                com.excp.podroid.util.ExecPerms.makeExecutable(dest)
             }
             total
         } finally {
