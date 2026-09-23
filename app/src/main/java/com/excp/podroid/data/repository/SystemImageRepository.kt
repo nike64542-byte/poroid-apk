@@ -91,10 +91,10 @@ class SystemImageRepository @Inject constructor(
             if (code !in 200..299) {
                 throw IOException("HTTP $code for $url")
             }
+            var total = 0L
             connection.inputStream.use { input ->
                 FileOutputStream(tmp).use { output ->
                     val buffer = ByteArray(1 shl 16)
-                    var total = 0L
                     while (true) {
                         val read = input.read(buffer)
                         if (read < 0) break
