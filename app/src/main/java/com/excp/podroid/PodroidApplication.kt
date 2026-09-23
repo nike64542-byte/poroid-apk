@@ -100,11 +100,33 @@ class PodroidApplication : Application() {
             // complete check all overlap usefully across threads. Runs on a
             // background coroutine (not the main thread); the VM launch path
             // awaits awaitAssetsReady.
+            //
+            // Two-step source:
+            //   * qemu/ is ALWAYS extracted from the bundled APK assets — the
+            //     keymaps/efi-rom are tiny and have no URL source.
+            //   * vmlinuz/initrd/rootfs may have been DOWNLOADED to filesDir by
+            //     the setup wizard (SystemImageRepository.downloadAll writes to
+            //     exactly these paths). A present, non-empty downloaded file
+            //     must not be clobbered by the bundled asset on an upgrade
+            //     (forceCopy), otherwise a freshly downloaded image is silently
+            //     reverted to whatever the APK shipped. Downloads win.
+            //   * If an image is neither bundled nor downloaded (the APK was
+            //     built without embedding them and the user chose to download),
+            //     the engines' own size-check will fail the VM launch with a
+            //     clear error — extraction must not crash cold-start here.
+            val downloadedBlocks: Map<String, Boolean> = mapOf(
+                "vmlinuz-virt" to isDownloadedFile(File(filesDir, "vmlinuz-virt")),
+                "initrd.img" to isDownloadedFile(File(filesDir, "initrd.img")),
+                "kali-rootfs.squashfs" to isDownloadedFile(File(filesDir, "kali-rootfs.squashfs")),
+            )
+            fun skipDownloaded(assetPath: String): Boolean =
+                downloadedBlocks[assetPath] == true
+
             val tasks: List<() -> Unit> = listOf(
                 { copyAssetDir("qemu", filesDir, forceCopy) },
-                { copyAssetIfNeeded("vmlinuz-virt", File(filesDir, "vmlinuz-virt"), forceCopy) },
-                { copyAssetIfNeeded("initrd.img", File(filesDir, "initrd.img"), forceCopy) },
-                { copyAssetIfNeeded("kali-rootfs.squashfs", File(filesDir, "kali-rootfs.squashfs"), forceCopy) },
+                { if (!skipDownloaded("vmlinuz-virt")) copyAssetQuiet("vmlinuz-virt", File(filesDir, "vmlinuz-virt"), forceCopy) },
+                { if (!skipDownloaded("initrd.img")) copyAssetQuiet("initrd.img", File(filesDir, "initrd.img"), forceCopy) },
+                { if (!skipDownloaded("kali-rootfs.squashfs")) copyAssetQuiet("kali-rootfs.squashfs", File(filesDir, "kali-rootfs.squashfs"), forceCopy) },
             )
             val pool = Executors.newFixedThreadPool(tasks.size.coerceAtMost(4))
             var allSucceeded = true
@@ -210,6 +232,22 @@ class PodroidApplication : Application() {
     }
 
     /**
+     * Like [copyAssetIfNeeded], but treats a missing bundled asset as a
+     * no-op instead of an error. Used for the VM images (kernel/initrd/rootfs)
+     * that may be downloaded at runtime rather than embedded in the APK: an
+     * APK built without them must still cold-start so the setup wizard can
+     * fill in URLs.
+     */
+    private fun copyAssetQuiet(assetPath: String, destFile: File, forceCopy: Boolean) {
+        val assetExists = runCatching { assets.openFd(assetPath).use { it.length >= 0 } }.getOrDefault(false)
+        if (!assetExists) {
+            Log.i(TAG, "asset not bundled — skipping extract of $assetPath (must be downloaded)")
+            return
+        }
+        copyAssetIfNeeded(assetPath, destFile, forceCopy)
+    }
+
+    /**
      * Streams [assetPath] to `<destFile>.tmp`, fsyncs the data to disk, then
      * atomically renames it onto [destFile]. The final canonical path therefore
      * only ever holds a fully-written file — an async reader (the VM launch)
@@ -238,5 +276,8 @@ class PodroidApplication : Application() {
     companion object {
         private const val TAG = "PodroidApp"
         private const val TMP_SUFFIX = ".tmp"
+
+        /** A downloaded image is "present" only if the file exists and holds > 0 bytes. */
+        private fun isDownloadedFile(f: File): Boolean = f.isFile && f.length() > 0
     }
 }

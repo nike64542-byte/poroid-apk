@@ -32,8 +32,10 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
@@ -55,6 +57,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -112,7 +115,7 @@ fun SetupScreen(
     var usbPassthroughEnabled by rememberSaveable { mutableStateOf(false) }
     val usbPassthroughAvailable = remember { viewModel.usbPassthroughAvailable() }
     val setupComplete by viewModel.setupComplete.collectAsStateWithLifecycle()
-    val pagerState = rememberPagerState(pageCount = { 5 })
+    val pagerState = rememberPagerState(pageCount = { 6 })
     val scope = rememberCoroutineScope()
 
     fun applyLoadBalance() {
@@ -160,11 +163,12 @@ fun SetupScreen(
     // Announced to TalkBack on both the progress bar and the page dots below,
     // since neither conveys the step number on its own.
     val stepLabel = when (pagerState.currentPage) {
-        0 -> stringResource(R.string.step_1_of_5)
-        1 -> stringResource(R.string.step_2_of_5)
-        2 -> stringResource(R.string.step_3_of_5)
-        3 -> stringResource(R.string.step_4_of_5)
-        else -> stringResource(R.string.step_5_of_5)
+        0 -> stringResource(R.string.step_1_of_6)
+        1 -> stringResource(R.string.step_2_of_6)
+        2 -> stringResource(R.string.step_3_of_6)
+        3 -> stringResource(R.string.step_4_of_6)
+        4 -> stringResource(R.string.step_5_of_6)
+        else -> stringResource(R.string.step_6_of_6)
     }
 
     Scaffold { innerPadding ->
@@ -175,7 +179,7 @@ fun SetupScreen(
         ) {
             // Step progress bar
             LinearProgressIndicator(
-                progress = { (pagerState.currentPage + 1) / 5f },
+                progress = { (pagerState.currentPage + 1) / 6f },
                 modifier = Modifier
                     .fillMaxWidth()
                     .semantics { contentDescription = stepLabel },
@@ -189,90 +193,95 @@ fun SetupScreen(
                 userScrollEnabled = false,
             ) { page ->
                 when (page) {
-                    0 -> StoragePage(
-                        windowSizeClass = windowSizeClass,
-                        selectedGb = selectedGb,
-                        loadBalanceEnabled = loadBalanceEnabled,
-                        onSelect = { selectedGb = it },
-                        onNext = { scope.launch { pagerState.animateScrollToPage(1) } },
-                    )
-                    1 -> VmConfigPage(
-                        windowSizeClass = windowSizeClass,
-                        storageGb = selectedGb,
-                        ramMb = selectedRamMb,
-                        cpus = selectedCpus,
-                        bandwidthMbps = selectedBandwidthMbps,
-                        loadBalanceEnabled = loadBalanceEnabled,
-                        onLoadBalanceToggle = { enabled ->
-                            loadBalanceEnabled = enabled
-                            if (enabled) applyLoadBalance()
-                        },
-                        onRamChange = { selectedRamMb = it },
-                        onCpusChange = { selectedCpus = it },
-                        onBandwidthChange = { selectedBandwidthMbps = it },
-                        sshEnabled = sshEnabled,
-                        onSshToggle = { sshEnabled = it },
-                        onBack = { scope.launch { pagerState.animateScrollToPage(0) } },
-                        onNext = { scope.launch { pagerState.animateScrollToPage(2) } },
-                    )
-                    2 -> StorageAccessPage(
-                        windowSizeClass = windowSizeClass,
-                        storageAccessEnabled = storageAccessEnabled,
-                        hasStoragePermission = hasStoragePermission,
-                        onStoragePermissionChanged = { hasStoragePermission = it },
-                        onStorageAccessToggle = { enabled ->
-                            storageAccessEnabled = enabled
-                            if (enabled &&
-                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
-                                !Environment.isExternalStorageManager()
-                            ) {
-                                context.startActivity(
-                                    Intent(
-                                        Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
-                                        Uri.parse("package:${context.packageName}"),
-                                    )
+                0 -> SystemImageDownloadPage(
+                    windowSizeClass = windowSizeClass,
+                    viewModel = viewModel,
+                    onNext = { scope.launch { pagerState.animateScrollToPage(1) } },
+                )
+                1 -> StoragePage(
+                    windowSizeClass = windowSizeClass,
+                    selectedGb = selectedGb,
+                    loadBalanceEnabled = loadBalanceEnabled,
+                    onSelect = { selectedGb = it },
+                    onNext = { scope.launch { pagerState.animateScrollToPage(2) } },
+                )
+                2 -> VmConfigPage(
+                    windowSizeClass = windowSizeClass,
+                    storageGb = selectedGb,
+                    ramMb = selectedRamMb,
+                    cpus = selectedCpus,
+                    bandwidthMbps = selectedBandwidthMbps,
+                    loadBalanceEnabled = loadBalanceEnabled,
+                    onLoadBalanceToggle = { enabled ->
+                        loadBalanceEnabled = enabled
+                        if (enabled) applyLoadBalance()
+                    },
+                    onRamChange = { selectedRamMb = it },
+                    onCpusChange = { selectedCpus = it },
+                    onBandwidthChange = { selectedBandwidthMbps = it },
+                    sshEnabled = sshEnabled,
+                    onSshToggle = { sshEnabled = it },
+                    onBack = { scope.launch { pagerState.animateScrollToPage(1) } },
+                    onNext = { scope.launch { pagerState.animateScrollToPage(3) } },
+                )
+                3 -> StorageAccessPage(
+                    windowSizeClass = windowSizeClass,
+                    storageAccessEnabled = storageAccessEnabled,
+                    hasStoragePermission = hasStoragePermission,
+                    onStoragePermissionChanged = { hasStoragePermission = it },
+                    onStorageAccessToggle = { enabled ->
+                        storageAccessEnabled = enabled
+                        if (enabled &&
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                            !Environment.isExternalStorageManager()
+                        ) {
+                            context.startActivity(
+                                Intent(
+                                    Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                                    Uri.parse("package:${context.packageName}"),
                                 )
-                            }
-                        },
-                        onOpenStorageAccessSettings = {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                                context.startActivity(
-                                    Intent(
-                                        Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
-                                        Uri.parse("package:${context.packageName}"),
-                                    )
-                                )
-                            }
-                        },
-                        onBack = { scope.launch { pagerState.animateScrollToPage(1) } },
-                        onNext = { scope.launch { pagerState.animateScrollToPage(3) } },
-                    )
-                    3 -> UsbPassthroughPage(
-                        windowSizeClass = windowSizeClass,
-                        usbPassthroughEnabled = usbPassthroughEnabled,
-                        available = usbPassthroughAvailable,
-                        onUsbPassthroughToggle = { usbPassthroughEnabled = it },
-                        onBack = { scope.launch { pagerState.animateScrollToPage(2) } },
-                        onNext = { scope.launch { pagerState.animateScrollToPage(4) } },
-                    )
-                    4 -> PermissionsPage(
-                        windowSizeClass = windowSizeClass,
-                        onBack = { scope.launch { pagerState.animateScrollToPage(3) } },
-                        onGetStarted = {
-                            viewModel.completeSetup(
-                                storageSizeGb = selectedGb,
-                                vmRamMb = selectedRamMb,
-                                vmCpus = selectedCpus,
-                                sshEnabled = sshEnabled,
-                                storageAccessEnabled = storageAccessEnabled,
-                                usbPassthroughEnabled = usbPassthroughEnabled && usbPassthroughAvailable,
-                                loadBalanceEnabled = loadBalanceEnabled,
-                                bandwidthMbps = selectedBandwidthMbps,
                             )
-                        },
-                    )
-                }
+                        }
+                    },
+                    onOpenStorageAccessSettings = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            context.startActivity(
+                                Intent(
+                                    Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                                    Uri.parse("package:${context.packageName}"),
+                                )
+                            )
+                        }
+                    },
+                    onBack = { scope.launch { pagerState.animateScrollToPage(2) } },
+                    onNext = { scope.launch { pagerState.animateScrollToPage(4) } },
+                )
+                4 -> UsbPassthroughPage(
+                    windowSizeClass = windowSizeClass,
+                    usbPassthroughEnabled = usbPassthroughEnabled,
+                    available = usbPassthroughAvailable,
+                    onUsbPassthroughToggle = { usbPassthroughEnabled = it },
+                    onBack = { scope.launch { pagerState.animateScrollToPage(3) } },
+                    onNext = { scope.launch { pagerState.animateScrollToPage(5) } },
+                )
+                5 -> PermissionsPage(
+                    windowSizeClass = windowSizeClass,
+                    onBack = { scope.launch { pagerState.animateScrollToPage(4) } },
+                    onGetStarted = {
+                        viewModel.completeSetup(
+                            storageSizeGb = selectedGb,
+                            vmRamMb = selectedRamMb,
+                            vmCpus = selectedCpus,
+                            sshEnabled = sshEnabled,
+                            storageAccessEnabled = storageAccessEnabled,
+                            usbPassthroughEnabled = usbPassthroughEnabled && usbPassthroughAvailable,
+loadBalanceEnabled = loadBalanceEnabled,
+                            bandwidthMbps = selectedBandwidthMbps,
+                        )
+                    },
+                )
             }
+        }
 
             // Pill-shaped page indicator
             Row(
@@ -283,7 +292,7 @@ fun SetupScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                repeat(5) { index ->
+                repeat(6) { index ->
                     val isSelected = pagerState.currentPage == index
                     val dotWidth by animateDpAsState(
                         targetValue = if (isSelected) 24.dp else 8.dp,
@@ -393,6 +402,119 @@ private fun SetupPageLayout(
     }
 }
 
+// ── Page 0: System image download ────────────────────────────────────────────
+
+@Composable
+private fun SystemImageDownloadPage(
+    windowSizeClass: WindowSizeClass,
+    viewModel: SetupViewModel,
+    onNext: () -> Unit,
+) {
+    var kernel by rememberSaveable { mutableStateOf("") }
+    var initrd by rememberSaveable { mutableStateOf("") }
+    var rootfs by rememberSaveable { mutableStateOf("") }
+    val kernelUrl by viewModel.kernelUrl.collectAsStateWithLifecycle()
+    val initrdUrl by viewModel.initrdUrl.collectAsStateWithLifecycle()
+    val rootfsUrl by viewModel.rootfsUrl.collectAsStateWithLifecycle()
+    val downloadState by viewModel.downloadState.collectAsStateWithLifecycle()
+
+    // Seed once from the persisted defaults (empty fields until the flow emits).
+    LaunchedEffect(kernelUrl) {
+        if (kernel.isEmpty() && !kernelUrl.isNullOrEmpty()) kernel = kernelUrl!!
+    }
+    LaunchedEffect(initrdUrl) {
+        if (initrd.isEmpty() && !initrdUrl.isNullOrEmpty()) initrd = initrdUrl!!
+    }
+    LaunchedEffect(rootfsUrl) {
+        if (rootfs.isEmpty() && !rootfsUrl.isNullOrEmpty()) rootfs = rootfsUrl!!
+    }
+
+    SetupPageLayout(
+        windowSizeClass = windowSizeClass,
+        stepLabel  = stringResource(R.string.step_1_of_6),
+        title      = stringResource(R.string.system_image_download),
+        description = stringResource(R.string.system_image_download_description),
+        bottomBar  = {
+            SetupNavBar(
+                onBack = {},
+                onNext = onNext,
+                nextLabel = stringResource(R.string.continue_label),
+            )
+        },
+    ) {
+        OutlinedTextField(
+            value = kernel,
+            onValueChange = { kernel = it; viewModel.updateUrls(kernel, initrd, rootfs) },
+            label = { Text(stringResource(R.string.system_image_kernel_url)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+        )
+        Spacer(Modifier.height(PodroidTokens.Spacing.SM))
+        OutlinedTextField(
+            value = initrd,
+            onValueChange = { initrd = it; viewModel.updateUrls(kernel, initrd, rootfs) },
+            label = { Text(stringResource(R.string.system_image_initrd_url)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+        )
+        Spacer(Modifier.height(PodroidTokens.Spacing.SM))
+        OutlinedTextField(
+            value = rootfs,
+            onValueChange = { rootfs = it; viewModel.updateUrls(kernel, initrd, rootfs) },
+            label = { Text(stringResource(R.string.system_image_rootfs_url)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+        )
+        Spacer(Modifier.height(PodroidTokens.Spacing.LG))
+
+        when (val state = downloadState) {
+            is DownloadUiState.Downloading -> {
+                Text(
+                    text = stringResource(R.string.system_image_download_in_progress),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            is DownloadUiState.Done -> {
+                Text(
+                    text = stringResource(R.string.system_image_download_done),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+            is DownloadUiState.Error -> {
+                Text(
+                    text = stringResource(R.string.system_image_download_failed, state.message),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = PodroidTokens.Amber,
+                )
+                Spacer(Modifier.height(PodroidTokens.Spacing.SM))
+                PodroidPrimaryButton(
+                    text = stringResource(R.string.download),
+                    onClick = viewModel::startDownload,
+                )
+            }
+            DownloadUiState.Idle -> {
+                Spacer(Modifier.height(PodroidTokens.Spacing.SM))
+                PodroidPrimaryButton(
+                    text = stringResource(R.string.download),
+                    onClick = viewModel::startDownload,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(PodroidTokens.Spacing.SM))
+        Text(
+            text = stringResource(R.string.system_image_skip),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
 // ── Page 1: Storage ───────────────────────────────────────────────────────────
 
 @Composable
@@ -405,7 +527,7 @@ private fun StoragePage(
 ) {
     SetupPageLayout(
         windowSizeClass = windowSizeClass,
-        stepLabel  = stringResource(R.string.step_1_of_5),
+        stepLabel  = stringResource(R.string.step_2_of_6),
         title      = stringResource(R.string.persistent_storage),
         description = stringResource(R.string.storage_description),
         bottomBar  = { SetupNextBar(onNext = onNext) },
@@ -448,7 +570,7 @@ private fun VmConfigPage(
 ) {
     SetupPageLayout(
         windowSizeClass = windowSizeClass,
-        stepLabel  = stringResource(R.string.step_2_of_5),
+        stepLabel  = stringResource(R.string.step_3_of_6),
         title      = stringResource(R.string.configure_vm),
         description = stringResource(R.string.vm_config_description),
         bottomBar  = { SetupNavBar(onBack = onBack, onNext = onNext, nextLabel = stringResource(R.string.continue_label)) },
@@ -527,7 +649,7 @@ private fun StorageAccessPage(
 
     SetupPageLayout(
         windowSizeClass = windowSizeClass,
-        stepLabel  = stringResource(R.string.step_3_of_5),
+        stepLabel  = stringResource(R.string.step_4_of_6),
         title      = stringResource(R.string.downloads_sharing),
         description = stringResource(R.string.storage_access_description),
         bottomBar  = { SetupNavBar(onBack = onBack, onNext = onNext, nextLabel = stringResource(R.string.continue_label)) },
@@ -578,7 +700,7 @@ private fun UsbPassthroughPage(
 ) {
     SetupPageLayout(
         windowSizeClass = windowSizeClass,
-        stepLabel  = stringResource(R.string.step_4_of_5),
+        stepLabel  = stringResource(R.string.step_5_of_6),
         title      = stringResource(R.string.usb_passthrough),
         description = stringResource(R.string.usb_passthrough_description),
         bottomBar  = { SetupNavBar(onBack = onBack, onNext = onNext, nextLabel = stringResource(R.string.continue_label)) },
@@ -644,7 +766,7 @@ private fun PermissionsPage(
 
     SetupPageLayout(
         windowSizeClass = windowSizeClass,
-        stepLabel  = stringResource(R.string.step_5_of_5),
+        stepLabel  = stringResource(R.string.step_6_of_6),
         title      = stringResource(R.string.permissions),
         description = stringResource(R.string.permissions_description),
         bottomBar  = { SetupNavBar(onBack = onBack, onNext = onGetStarted, nextLabel = stringResource(R.string.get_started)) },

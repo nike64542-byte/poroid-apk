@@ -227,11 +227,24 @@
     <string name="perm_granted">Granted</string>
 
     <!-- Setup Steps -->
-    <string name="step_1_of_5">Step 1 of 5</string>
-    <string name="step_2_of_5">Step 2 of 5</string>
-    <string name="step_3_of_5">Step 3 of 5</string>
-    <string name="step_4_of_5">Step 4 of 5</string>
-    <string name="step_5_of_5">Step 5 of 5</string>
+    <string name="step_1_of_6">Step 1 of 6</string>
+    <string name="step_2_of_6">Step 2 of 6</string>
+    <string name="step_3_of_6">Step 3 of 6</string>
+    <string name="step_4_of_6">Step 4 of 6</string>
+    <string name="step_5_of_6">Step 5 of 6</string>
+    <string name="step_6_of_6">Step 6 of 6</string>
+
+    <!-- System image download -->
+    <string name="system_image_download">Download system image</string>
+    <string name="system_image_download_description">Enter the download URLs for the kernel, initramfs and rootfs. They will be downloaded and used to boot the VM.</string>
+    <string name="system_image_kernel_url">Kernel URL (vmlinuz-virt)</string>
+    <string name="system_image_initrd_url">Initramfs URL (initrd.img)</string>
+    <string name="system_image_rootfs_url">Rootfs URL (kali-rootfs.squashfs)</string>
+    <string name="system_image_download_btn">Download</string>
+    <string name="system_image_download_in_progress">Downloading system images…</string>
+    <string name="system_image_download_done">System images downloaded.</string>
+    <string name="system_image_download_failed">Download failed: %1$s</string>
+    <string name="system_image_skip">Skip — use bundled images</string>
 
     <!-- Dialogs -->
     <string name="update_available">Update available</string>

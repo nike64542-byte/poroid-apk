@@ -227,11 +227,24 @@
     <string name="perm_granted">已授权</string>
 
     <!-- Setup Steps -->
-    <string name="step_1_of_5">第 1 步，共 5 步</string>
-    <string name="step_2_of_5">第 2 步，共 5 步</string>
-    <string name="step_3_of_5">第 3 步，共 5 步</string>
-    <string name="step_4_of_5">第 4 步，共 5 步</string>
-    <string name="step_5_of_5">第 5 步，共 5 步</string>
+    <string name="step_1_of_6">第 1 步，共 6 步</string>
+    <string name="step_2_of_6">第 2 步，共 6 步</string>
+    <string name="step_3_of_6">第 3 步，共 6 步</string>
+    <string name="step_4_of_6">第 4 步，共 6 步</string>
+    <string name="step_5_of_6">第 5 步，共 6 步</string>
+    <string name="step_6_of_6">第 6 步，共 6 步</string>
+
+    <!-- System image download -->
+    <string name="system_image_download">下载系统镜像</string>
+    <string name="system_image_download_description">填写内核、initramfs 和 rootfs 的下载地址，下载后将用于启动虚拟机。</string>
+    <string name="system_image_kernel_url">内核地址 (vmlinuz-virt)</string>
+    <string name="system_image_initrd_url">initramfs 地址 (initrd.img)</string>
+    <string name="system_image_rootfs_url">rootfs 地址 (kali-rootfs.squashfs)</string>
+    <string name="system_image_download_btn">下载</string>
+    <string name="system_image_download_in_progress">正在下载系统镜像…</string>
+    <string name="system_image_download_done">系统镜像已下载。</string>
+    <string name="system_image_download_failed">下载失败：%1$s</string>
+    <string name="system_image_skip">跳过——使用内置镜像</string>
 
     <!-- Dialogs -->
     <string name="update_available">有新版本可用</string>
