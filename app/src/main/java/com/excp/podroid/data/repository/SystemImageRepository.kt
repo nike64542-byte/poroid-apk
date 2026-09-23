@@ -135,7 +135,7 @@ class SystemImageRepository @Inject constructor(
      * Unpacks the QEMU asset tarball (tar.gz) the engines need:
      *   - the four *.so binaries   -> filesDir/
      *   - qemu/efi-virtio.rom      -> filesDir/qemu/efi-virtio.rom
-     *   - qemu/keymaps/*           -> filesDir/qemu/keymaps/
+     *   - qemu/keymaps dir         -> filesDir/qemu/keymaps/
      *
      * Java has no tar reader, so shell out to `tar` (present on Android).
      */
