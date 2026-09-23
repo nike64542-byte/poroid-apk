@@ -51,10 +51,10 @@ class SystemImageRepository @Inject constructor(
         private val KEY_QEMU_URL   = stringPreferencesKey("system_image_qemu_url")
         private val KEY_DOWNLOADED = booleanPreferencesKey("system_image_downloaded")
 
-        const val KERNEL_URL_DEFAULT   = "https://github.com/nike64542-byte/poroid-kernel/releases/latest/download/vmlinuz-virt"
-        const val INITRD_URL_DEFAULT   = "https://github.com/nike64542-byte/poroid-rootfs/releases/latest/download/initrd.img"
-        const val ROOTFS_URL_DEFAULT   = "https://github.com/nike64542-byte/poroid-rootfs/releases/latest/download/kali-rootfs.squashfs"
-        const val QEMU_URL_DEFAULT     = "https://github.com/nike64542-byte/poroid-qemu/releases/latest/download/qemu-assets.tar.gz"
+        const val KERNEL_URL_DEFAULT   = "https://github.com/nike64542-byte/poroid-kernel/releases/download/latest/vmlinuz-virt"
+        const val INITRD_URL_DEFAULT   = "https://github.com/nike64542-byte/poroid-rootfs/releases/download/latest/initrd.img"
+        const val ROOTFS_URL_DEFAULT   = "https://github.com/nike64542-byte/poroid-rootfs/releases/download/latest/kali-rootfs.squashfs"
+        const val QEMU_URL_DEFAULT     = "https://github.com/nike64542-byte/poroid-qemu/releases/download/latest/qemu-assets.tar.gz"
     }
 
     private val prefs = context.dataStore.data
