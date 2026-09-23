@@ -245,7 +245,6 @@
     <string name="system_image_download_in_progress">Downloading system images…</string>
     <string name="system_image_download_done">System images downloaded.</string>
     <string name="system_image_download_failed">Download failed: %1$s</string>
-    <string name="system_image_skip">Skip — use bundled images</string>
 
     <!-- Dialogs -->
     <string name="update_available">Update available</string>

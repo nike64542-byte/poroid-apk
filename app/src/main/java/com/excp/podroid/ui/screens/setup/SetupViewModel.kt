@@ -70,7 +70,9 @@ class SetupViewModel @Inject constructor(
             try {
                 // First persist URLs so a crash still records what the user chose.
                 systemImageRepository.setUrls(kernel, initrd, rootfs, qemu)
-                val bytes = systemImageRepository.downloadAll()
+                val bytes = systemImageRepository.downloadAll { progress ->
+                    _downloadState.value = DownloadUiState.Downloading(progress)
+                }
                 _downloaded.value = true
                 _downloadState.value = DownloadUiState.Done(bytes)
             } catch (c: kotlinx.coroutines.CancellationException) {

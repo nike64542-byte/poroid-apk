@@ -92,7 +92,11 @@ class SystemImageRepository @Inject constructor(
      * Downloads a URL to [dest] via a streaming HTTP GET. Atomic (tmp + rename)
      * so the engines never read a partial file. Returns bytes downloaded.
      */
-    suspend fun download(url: String, dest: File): Long = withContext(Dispatchers.IO) {
+    suspend fun download(
+        url: String,
+        dest: File,
+        onProgress: (Long, Long) -> Unit = { _, _ -> },
+    ): Long = withContext(Dispatchers.IO) {
         // Users often paste URLs with a stray leading/trailing space or a
         // mid-string newline; strip ALL whitespace so "repo /releases/…"
         // still resolves. Also collapse any accidental paste of the tag page.
@@ -109,6 +113,8 @@ class SystemImageRepository @Inject constructor(
             if (code !in 200..299) {
                 throw IOException("HTTP $code for $cleanUrl")
             }
+            // Content-Length is present after GitHub's 302 → asset redirect.
+            val expected = runCatching { connection.contentLengthLong }.getOrDefault(-1L)
             var total = 0L
             connection.inputStream.use { input ->
                 FileOutputStream(tmp).use { output ->
@@ -118,6 +124,7 @@ class SystemImageRepository @Inject constructor(
                         if (read < 0) break
                         output.write(buffer, 0, read)
                         total += read
+                        if (expected > 0) onProgress(total, expected)
                     }
                     output.flush()
                     output.fd.sync()
@@ -154,14 +161,66 @@ class SystemImageRepository @Inject constructor(
         }
     }
 
-    /** Downloads everything; returns per-file byte counts. */
-    suspend fun downloadAll(): Map<String, Long> = withContext(Dispatchers.IO) {
+    /** The four QEMU .so files that must exist for the VM to launch. */
+    private val qemuBinaryNames = listOf(
+        "libqemu-system-aarch64.so",
+        "libslirp.so",
+        "libpodroid-bridge.so",
+        "libpodroid-launcher.so",
+    )
+
+    private fun qemuBinaryUrl(name: String): String =
+        "https://github.com/nike64542-byte/poroid-qemu/releases/download/latest/$name"
+
+    /**
+     * Downloads the four QEMU binaries individually (they are NOT inside
+     * qemu-assets.tar.gz — that archive only has efi-virtio.rom + keymaps).
+     * onProgress reports progress across all four combined.
+     */
+    private suspend fun downloadQemuBinaries(onProgress: (done: Long, total: Long) -> Unit = { _, _ -> }): Long {
+        // Approximate total (the main .so dominates; sizes from the Release).
+        val sizes = mapOf(
+            "libqemu-system-aarch64.so" to 128_600_000L,
+            "libslirp.so" to 3_300_000L,
+            "libpodroid-bridge.so" to 50_000L,
+            "libpodroid-launcher.so" to 50_000L,
+        )
+        var grandTotal = sizes.values.sum()
+        var done = 0L
+        for (name in qemuBinaryNames) {
+            download(qemuBinaryUrl(name), File(context.filesDir, name)) { d, t ->
+                onProgress(done + d, grandTotal)
+            }
+            done += sizes[name] ?: 0L
+        }
+        return done
+    }
+
+    /** Downloads everything; returns per-file byte counts. [onProgress] reports 0..1 overall. */
+    suspend fun downloadAll(onProgress: (Float) -> Unit = {}): Map<String, Long> = withContext(Dispatchers.IO) {
         val result = LinkedHashMap<String, Long>()
-        result["kernel"] = download(kernelUrl(), kernelFile())
-        result["initrd"] = download(initrdUrl(), initrdFile())
-        result["rootfs"] = download(rootfsUrl(), rootfsFile())
-        result["qemu"] = download(qemuUrl(), qemuArchiveFile())
-        unpackQemuArchive(qemuArchiveFile())
+        // Weights per item; the big QEMU .so dominates the time.
+        val weights = listOf(0.10f, 0.10f, 0.15f, 0.65f)
+
+        suspend fun runStep(weightIndex: Int, block: suspend ((done: Long, total: Long) -> Unit) -> Long): Long {
+            val startAcc = (0 until weightIndex).sumOf { weights[it].toDouble() }.toFloat()
+            val bytes = block { done, total ->
+                val frac = if (total > 0) (done.toFloat() / total) else 0f
+                onProgress((startAcc + frac * weights[weightIndex]).coerceIn(0f, 1f))
+            }
+            return bytes
+        }
+
+        result["kernel"] = runStep(0) { p -> download(kernelUrl(), kernelFile(), p) }
+        result["initrd"] = runStep(1) { p -> download(initrdUrl(), initrdFile(), p) }
+        result["rootfs"] = runStep(2) { p -> download(rootfsUrl(), rootfsFile(), p) }
+        result["qemu"] = runStep(3) { p -> downloadQemuBinaries(p) }
+
+        // qemu-assets.tar.gz (efi rom + keymaps) is optional — engines don't
+        // reference them. Download+unpack best-effort; never fails the flow.
+        runCatching { download(qemuUrl(), qemuArchiveFile()) }.getOrNull()?.let {
+            runCatching { unpackQemuArchive(qemuArchiveFile()) }
+        }
         markDownloaded(true)
         result
     }

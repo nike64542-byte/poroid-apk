@@ -245,7 +245,6 @@
     <string name="system_image_download_in_progress">正在下载系统镜像…</string>
     <string name="system_image_download_done">系统镜像已下载。</string>
     <string name="system_image_download_failed">下载失败：%1$s</string>
-    <string name="system_image_skip">跳过——使用内置镜像</string>
 
     <!-- Dialogs -->
     <string name="update_available">有新版本可用</string>

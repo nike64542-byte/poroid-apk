@@ -491,6 +491,17 @@ private fun SystemImageDownloadPage(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Spacer(Modifier.height(PodroidTokens.Spacing.SM))
+                LinearProgressIndicator(
+                    progress = { state.progress },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(PodroidTokens.Spacing.SM))
+                Text(
+                    text = "%.0f%%".format(state.progress * 100),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
             is DownloadUiState.Done -> {
                 Text(
@@ -519,13 +530,6 @@ private fun SystemImageDownloadPage(
                 )
             }
         }
-
-        Spacer(Modifier.height(PodroidTokens.Spacing.SM))
-        Text(
-            text = stringResource(R.string.system_image_skip),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
 
