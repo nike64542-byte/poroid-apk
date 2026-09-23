@@ -135,6 +135,13 @@ class SystemImageRepository @Inject constructor(
                     throw IOException("atomic rename to ${dest.name} failed")
                 }
             }
+            // The QEMU binaries (qemu/launcher/bridge) are executed as programs
+            // by ProcessBuilder, not dlopen'd as libraries — downloaded files
+            // default to 0644 (no +x), which fails with error=13. Force the
+            // exec bit on any .so we fetched.
+            if (dest.name.endsWith(".so")) {
+                dest.setExecutable(true, false)
+            }
             total
         } finally {
             runCatching { tmp.delete() }
