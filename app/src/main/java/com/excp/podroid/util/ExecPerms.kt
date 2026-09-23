@@ -15,13 +15,45 @@ import java.io.File
 object ExecPerms {
     private const val TAG = "ExecPerms"
 
+    /** Octal mode like `0100644` (type bits + rwx), or `?` when stat fails. */
+    fun modeString(file: File): String =
+        runCatching { "0" + Integer.toOctalString(android.system.Os.stat(file.absolutePath).st_mode) }
+            .getOrDefault("?")
+
+    /** SELinux label of the file, or `?` when unavailable. */
+    fun selinuxContext(file: File): String =
+        runCatching {
+            String(
+                android.system.Os.getxattr(file.absolutePath, "security.selinux"),
+                Charsets.UTF_8
+            )
+        }.getOrDefault("?")
+
+    /**
+     * One-line file state for diagnostics: mode / exec / size / selinux label.
+     * This is the evidence that distinguishes "0644 chmod never ran" from
+     * "0755 but SELinux still denies exec".
+     */
+    fun describe(file: File): String =
+        if (!file.exists()) "${file.name}: (missing)"
+        else "${file.name}: mode=${modeString(file)} exec=${file.canExecute()} " +
+            "size=${file.length()} selinux=${selinuxContext(file)}"
+
     /**
      * Make [file] executable. Returns true if the file is executable after the
-     * attempt (either it already was, or chmod succeeded).
+     * attempt (either it already was, or chmod succeeded). Always logs — the
+     * early-return branch included — so the ExecPerms tag in an exported log
+     * proves this code ran.
      */
     fun makeExecutable(file: File): Boolean {
-        if (!file.exists()) return false
-        if (file.canExecute()) return true
+        if (!file.exists()) {
+            Log.w(TAG, "makeExecutable: ${file.absolutePath} missing")
+            return false
+        }
+        if (file.canExecute()) {
+            Log.i(TAG, "already executable: ${describe(file)}")
+            return true
+        }
 
         // 1) Preferred: real chmod binary (reliable on Android).
         runCatching {
@@ -39,7 +71,11 @@ object ExecPerms {
         }
 
         val ok = file.canExecute()
-        Log.i(TAG, "${file.absolutePath} executable=$ok mode=${file.canRead()}/${file.canWrite()}/${ok}")
+        if (ok) {
+            Log.i(TAG, "chmod ok: ${describe(file)}")
+        } else {
+            Log.e(TAG, "chmod FAILED (will likely hit error=13): ${describe(file)}")
+        }
         return ok
     }
 }

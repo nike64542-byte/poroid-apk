@@ -477,7 +477,11 @@ class QemuEngine @Inject constructor(
             _state.value = VmState.Stopped
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start QEMU", e)
-            _state.value = VmState.Error(e.message ?: "Unknown error")
+            // Surface the binaries' mode/label right in the UI error so a
+            // permission failure is self-explaining without a log export.
+            val diag = listOf("libqemu-system-aarch64.so", "libpodroid-launcher.so", "libpodroid-bridge.so")
+                .joinToString("\n") { com.excp.podroid.util.ExecPerms.describe(File(context.filesDir, it)) }
+            _state.value = VmState.Error("${e.message ?: "Unknown error"}\n$diag")
             cleanup()
         }
     }
@@ -777,6 +781,14 @@ class QemuEngine @Inject constructor(
         val launcher = if (launcherDownloaded.exists()) launcherDownloaded
             else File(context.applicationInfo.nativeLibraryDir, "libpodroid-launcher.so")
         return if (launcher.exists()) {
+            // Decisive evidence for error=13 triage: which path was picked and
+            // its mode/label. Logged under the allowlisted QemuEngine tag so it
+            // reaches the diagnostic export.
+            Log.d(
+                TAG,
+                "exec state: ${com.excp.podroid.util.ExecPerms.describe(launcher)} | " +
+                    com.excp.podroid.util.ExecPerms.describe(qemuExe)
+            )
             listOf(launcher.absolutePath, qemuExe.absolutePath) + args
         } else {
             listOf(qemuExe.absolutePath) + args

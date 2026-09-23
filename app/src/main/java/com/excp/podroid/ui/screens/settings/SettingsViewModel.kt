@@ -437,6 +437,7 @@ class SettingsViewModel @Inject constructor(
 
             appendLine("=== App ===")
             appendLine("Version:      ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+            appendLine("Build rev:    ${BuildConfig.BUILD_REV}")
             appendLine("Build type:   ${BuildConfig.BUILD_TYPE}")
             appendLine("App ID:       ${BuildConfig.APPLICATION_ID}")
             appendLine("QEMU version: ${BuildConfig.QEMU_VERSION}")
@@ -500,6 +501,27 @@ class SettingsViewModel @Inject constructor(
             append(if (engineDiag.isBlank()) "(none)\n" else engineDiag)
             appendLine()
 
+            appendLine("=== Exec Files (filesDir; mode=octal, selinux=file label) ===")
+            listOf(
+                "libqemu-system-aarch64.so", "libpodroid-launcher.so",
+                "libpodroid-bridge.so", "libslirp.so",
+                "vmlinuz-virt", "initrd.img", "kali-rootfs.squashfs",
+            ).forEach { name ->
+                appendLine(com.excp.podroid.util.ExecPerms.describe(File(context.filesDir, name)))
+            }
+            appendLine("nativeLibraryDir copies:")
+            listOf(
+                "libqemu-system-aarch64.so", "libpodroid-launcher.so",
+                "libpodroid-bridge.so", "libslirp.so",
+            ).forEach { name ->
+                appendLine(
+                    "  " + com.excp.podroid.util.ExecPerms.describe(
+                        File(context.applicationInfo.nativeLibraryDir, name)
+                    )
+                )
+            }
+            appendLine()
+
             appendLine("=== App Logcat (this process) ===")
             append(captureAppLogcat())
             appendLine()
@@ -557,7 +579,7 @@ class SettingsViewModel @Inject constructor(
          */
         private val APP_LOG_TAGS = listOf(
             "AudioStreamer", "AvfEngine", "AvfReflect", "ConsoleFanout",
-            "EngineHolder", "PodroidApp", "PodroidService", "PodroidVM-err",
+            "EngineHolder", "ExecPerms", "PodroidApp", "PodroidService", "PodroidVM-err",
             "QemuEngine", "QmpClient", "SettingsViewModel", "TerminalVM",
             "VsockControlChannel", "VsockPortForwarder",
         )

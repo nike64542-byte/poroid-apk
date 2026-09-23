@@ -28,6 +28,12 @@ android {
         versionCode = 33
         versionName = "1.2.9"
         buildConfigField("String", "QEMU_VERSION", "\"$podroidQemuVersion\"")
+        // CI injects the commit SHA so a diagnostic export can prove which build
+        // is actually installed (versionCode is a fixed 33 across rebuilds).
+        buildConfigField(
+            "String", "BUILD_REV",
+            "\"${(System.getenv("PODROID_BUILD_REV") ?: "local").take(7)}\""
+        )
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
