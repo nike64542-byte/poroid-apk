@@ -53,9 +53,13 @@ class ProxySessionClient(private val tag: String) : TerminalSessionClient {
 object TerminalBridge {
     fun executable(context: Context): File {
         // Prefer a user-downloaded bridge (setup wizard wrote it to filesDir);
-        // fall back to the APK-bundled jniLibs copy when present.
+        // fall back to the APK-bundled jniLibs copy when present. Downloaded
+        // .so defaults to 0644 (no +x), so self-heal the exec bit before launch.
         val downloaded = File(context.filesDir, "libpodroid-bridge.so")
-        if (downloaded.exists()) return downloaded
+        if (downloaded.exists()) {
+            if (!downloaded.canExecute()) downloaded.setExecutable(true, false)
+            return downloaded
+        }
         return File(context.applicationInfo.nativeLibraryDir, "libpodroid-bridge.so")
     }
 

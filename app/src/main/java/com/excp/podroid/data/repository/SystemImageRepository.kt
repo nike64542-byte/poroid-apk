@@ -89,6 +89,19 @@ class SystemImageRepository @Inject constructor(
     }
 
     /**
+     * Ensures [file] (a downloaded .so that QEMU/launcher/bridge exec as a
+     * program) carries the exec bit. Downloads default to 0644; without this a
+     * launch fails with error=13 Permission denied. Self-heals an already-downloaded
+     * file so the user doesn't have to re-download to fix permissions.
+     */
+    fun ensureExecutable(file: File): File {
+        if (file.exists() && !file.canExecute()) {
+            file.setExecutable(true, false)
+        }
+        return file
+    }
+
+    /**
      * Downloads a URL to [dest] via a streaming HTTP GET. Atomic (tmp + rename)
      * so the engines never read a partial file. Returns bytes downloaded.
      */
