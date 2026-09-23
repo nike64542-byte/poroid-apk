@@ -59,58 +59,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: 从 poroid-kernel Release 下载内核
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: 说明 — VM 镜像不打包
         run: |
-          mkdir -p app/src/main/assets/
-          gh release download latest -R "${KERNEL_REPO}" -p "vmlinuz-virt" \
-            --dir app/src/main/assets/ --clobber \
-            || echo "警告：无法下载内核，继续（可用已提交产物）"
-
-      - name: 从 poroid-rootfs Release 下载 initramfs + rootfs
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          mkdir -p app/src/main/assets/
-          gh release download latest -R "${ROOTFS_REPO}" \
-            -p "initrd.img" -p "kali-rootfs.squashfs" \
-            --dir app/src/main/assets/ --clobber \
-            || echo "警告：无法下载系统镜像，继续"
-
-      - name: 从 poroid-qemu Release 下载 QEMU
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          mkdir -p app/src/main/jniLibs/arm64-v8a/
-          gh release download latest -R "${QEMU_REPO}" \
-            -p "libqemu-system-aarch64.so" -p "libslirp.so" \
-            -p "libpodroid-bridge.so" -p "libpodroid-launcher.so" \
-            -p "qemu-assets.tar.gz" \
-            --dir /tmp/qemu-dl --clobber \
-            || echo "警告：无法下载 QEMU，继续"
-          # 解包 QEMU 资源（efi-virtio.rom + keymaps）到 assets/qemu/
-          if [ -f /tmp/qemu-dl/qemu-assets.tar.gz ]; then
-            mkdir -p app/src/main/assets/qemu/
-            tar xzf /tmp/qemu-dl/qemu-assets.tar.gz -C app/src/main/assets/qemu/
-          fi
-          if [ -f /tmp/qemu-dl/libqemu-system-aarch64.so ]; then
-            cp /tmp/qemu-dl/libqemu-system-aarch64.so app/src/main/jniLibs/arm64-v8a/
-            cp /tmp/qemu-dl/libslirp.so app/src/main/jniLibs/arm64-v8a/
-            cp /tmp/qemu-dl/libpodroid-bridge.so app/src/main/jniLibs/arm64-v8a/
-            cp /tmp/qemu-dl/libpodroid-launcher.so app/src/main/jniLibs/arm64-v8a/
-          fi
-
-      - name: 检查下载的资源
-        run: |
-          echo "=== assets ==="
-          ls -la app/src/main/assets/ 2>/dev/null || echo "无 assets 目录"
-          echo "=== jniLibs ==="
-          ls -la app/src/main/jniLibs/arm64-v8a/ 2>/dev/null || echo "无 jniLibs 目录"
-          [ -f app/src/main/assets/vmlinuz-virt ] || echo "警告：缺少 vmlinuz-virt"
-          [ -f app/src/main/assets/initrd.img ]   || echo "警告：缺少 initrd.img"
-          [ -f app/src/main/assets/kali-rootfs.squashfs ] || echo "警告：缺少 kali-rootfs.squashfs"
-          [ -f app/src/main/jniLibs/arm64-v8a/libqemu-system-aarch64.so ] || echo "警告：缺少 QEMU"
+          echo "APK 不包含内核/initramfs/rootfs/QEMU（保持安装包小）。"
+          echo "安装后首次启动，在设置向导中粘贴下载链接，App 会自动下载。"
+          echo "若本仓库在本地构建前运行了 ./fetch-artifacts.sh，"
+          echo "这些文件会被打进 APK 作为兜底。"
 
       - name: 构建 APK
         run: |

@@ -240,6 +240,7 @@
     <string name="system_image_kernel_url">Kernel URL (vmlinuz-virt)</string>
     <string name="system_image_initrd_url">Initramfs URL (initrd.img)</string>
     <string name="system_image_rootfs_url">Rootfs URL (kali-rootfs.squashfs)</string>
+    <string name="system_image_qemu_url">QEMU URL (qemu-assets.tar.gz)</string>
     <string name="system_image_download_btn">Download</string>
     <string name="system_image_download_in_progress">Downloading system images…</string>
     <string name="system_image_download_done">System images downloaded.</string>

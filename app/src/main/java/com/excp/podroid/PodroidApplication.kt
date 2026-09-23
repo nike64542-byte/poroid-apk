@@ -101,19 +101,18 @@ class PodroidApplication : Application() {
             // background coroutine (not the main thread); the VM launch path
             // awaits awaitAssetsReady.
             //
-            // Two-step source:
-            //   * qemu/ is ALWAYS extracted from the bundled APK assets — the
-            //     keymaps/efi-rom are tiny and have no URL source.
-            //   * vmlinuz/initrd/rootfs may have been DOWNLOADED to filesDir by
-            //     the setup wizard (SystemImageRepository.downloadAll writes to
-            //     exactly these paths). A present, non-empty downloaded file
-            //     must not be clobbered by the bundled asset on an upgrade
-            //     (forceCopy), otherwise a freshly downloaded image is silently
-            //     reverted to whatever the APK shipped. Downloads win.
-            //   * If an image is neither bundled nor downloaded (the APK was
-            //     built without embedding them and the user chose to download),
-            //     the engines' own size-check will fail the VM launch with a
-            //     clear error — extraction must not crash cold-start here.
+            // Download-first source (the APK does NOT bundle VM images):
+            //   * The setup wizard writes vmlinuz-virt / initrd.img /
+            //     kali-rootfs.squashfs / qemu-assets (unpacked .so + qemu/)
+            //     to filesDir (SystemImageRepository.downloadAll). A present,
+            //     non-empty downloaded file must not be clobbered by a bundled
+            //     asset on upgrade (forceCopy) — downloads win.
+            //   * qemu/ + the three images MAY still be bundled by a local
+            //     build that ran fetch-artifacts.sh before assembling; extract
+            //     those as a fallback so such an APK still boots.
+            //   * Missing on both sides is not an error at cold-start — the
+            //     engines' own size-check fails the VM launch with a clear
+            //     message instead.
             val downloadedBlocks: Map<String, Boolean> = mapOf(
                 "vmlinuz-virt" to isDownloadedFile(File(filesDir, "vmlinuz-virt")),
                 "initrd.img" to isDownloadedFile(File(filesDir, "initrd.img")),

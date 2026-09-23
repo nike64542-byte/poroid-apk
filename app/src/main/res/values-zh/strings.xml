@@ -240,6 +240,7 @@
     <string name="system_image_kernel_url">内核地址 (vmlinuz-virt)</string>
     <string name="system_image_initrd_url">initramfs 地址 (initrd.img)</string>
     <string name="system_image_rootfs_url">rootfs 地址 (kali-rootfs.squashfs)</string>
+    <string name="system_image_qemu_url">QEMU 地址 (qemu-assets.tar.gz)</string>
     <string name="system_image_download_btn">下载</string>
     <string name="system_image_download_in_progress">正在下载系统镜像…</string>
     <string name="system_image_download_done">系统镜像已下载。</string>

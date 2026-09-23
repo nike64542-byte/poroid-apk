@@ -28,6 +28,8 @@ class SetupViewModel @Inject constructor(
     val initrdUrl: StateFlow<String?> = _initrdUrl.asStateFlow()
     private val _rootfsUrl = MutableStateFlow<String?>(null)
     val rootfsUrl: StateFlow<String?> = _rootfsUrl.asStateFlow()
+    private val _qemuUrl = MutableStateFlow<String?>(null)
+    val qemuUrl: StateFlow<String?> = _qemuUrl.asStateFlow()
 
     private val _downloaded = MutableStateFlow(false)
     val downloaded: StateFlow<Boolean> = _downloaded.asStateFlow()
@@ -40,14 +42,15 @@ class SetupViewModel @Inject constructor(
             _kernelUrl.value = systemImageRepository.kernelUrl()
             _initrdUrl.value = systemImageRepository.initrdUrl()
             _rootfsUrl.value = systemImageRepository.rootfsUrl()
+            _qemuUrl.value = systemImageRepository.qemuUrl()
             _downloaded.value = systemImageRepository.isDownloaded()
         }
     }
 
     /** Persists URL edits immediately; clears the downloaded flag so a URL change re-downloads. */
-    fun updateUrls(kernel: String, initrd: String, rootfs: String) {
+    fun updateUrls(kernel: String, initrd: String, rootfs: String, qemu: String) {
         viewModelScope.launch {
-            systemImageRepository.setUrls(kernel, initrd, rootfs)
+            systemImageRepository.setUrls(kernel, initrd, rootfs, qemu)
             systemImageRepository.markDownloaded(false)
             _downloaded.value = false
         }
@@ -57,15 +60,16 @@ class SetupViewModel @Inject constructor(
         val kernel = _kernelUrl.value.orEmpty().trim()
         val initrd = _initrdUrl.value.orEmpty().trim()
         val rootfs = _rootfsUrl.value.orEmpty().trim()
-        if (kernel.isEmpty() || initrd.isEmpty() || rootfs.isEmpty()) {
-            _downloadState.value = DownloadUiState.Error("三个下载地址都需要填写")
+        val qemu = _qemuUrl.value.orEmpty().trim()
+        if (kernel.isEmpty() || initrd.isEmpty() || rootfs.isEmpty() || qemu.isEmpty()) {
+            _downloadState.value = DownloadUiState.Error("四个下载地址都需要填写")
             return
         }
         viewModelScope.launch {
             _downloadState.value = DownloadUiState.Downloading(0f)
             try {
                 // First persist URLs so a crash still records what the user chose.
-                systemImageRepository.setUrls(kernel, initrd, rootfs)
+                systemImageRepository.setUrls(kernel, initrd, rootfs, qemu)
                 val bytes = systemImageRepository.downloadAll()
                 _downloaded.value = true
                 _downloadState.value = DownloadUiState.Done(bytes)

@@ -413,9 +413,11 @@ private fun SystemImageDownloadPage(
     var kernel by rememberSaveable { mutableStateOf("") }
     var initrd by rememberSaveable { mutableStateOf("") }
     var rootfs by rememberSaveable { mutableStateOf("") }
+    var qemu by rememberSaveable { mutableStateOf("") }
     val kernelUrl by viewModel.kernelUrl.collectAsStateWithLifecycle()
     val initrdUrl by viewModel.initrdUrl.collectAsStateWithLifecycle()
     val rootfsUrl by viewModel.rootfsUrl.collectAsStateWithLifecycle()
+    val qemuUrl by viewModel.qemuUrl.collectAsStateWithLifecycle()
     val downloadState by viewModel.downloadState.collectAsStateWithLifecycle()
 
     // Seed once from the persisted defaults (empty fields until the flow emits).
@@ -427,6 +429,9 @@ private fun SystemImageDownloadPage(
     }
     LaunchedEffect(rootfsUrl) {
         if (rootfs.isEmpty() && !rootfsUrl.isNullOrEmpty()) rootfs = rootfsUrl!!
+    }
+    LaunchedEffect(qemuUrl) {
+        if (qemu.isEmpty() && !qemuUrl.isNullOrEmpty()) qemu = qemuUrl!!
     }
 
     SetupPageLayout(
@@ -444,7 +449,7 @@ private fun SystemImageDownloadPage(
     ) {
         OutlinedTextField(
             value = kernel,
-            onValueChange = { kernel = it; viewModel.updateUrls(kernel, initrd, rootfs) },
+            onValueChange = { kernel = it; viewModel.updateUrls(kernel, initrd, rootfs, qemu) },
             label = { Text(stringResource(R.string.system_image_kernel_url)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
@@ -453,7 +458,7 @@ private fun SystemImageDownloadPage(
         Spacer(Modifier.height(PodroidTokens.Spacing.SM))
         OutlinedTextField(
             value = initrd,
-            onValueChange = { initrd = it; viewModel.updateUrls(kernel, initrd, rootfs) },
+            onValueChange = { initrd = it; viewModel.updateUrls(kernel, initrd, rootfs, qemu) },
             label = { Text(stringResource(R.string.system_image_initrd_url)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
@@ -462,8 +467,17 @@ private fun SystemImageDownloadPage(
         Spacer(Modifier.height(PodroidTokens.Spacing.SM))
         OutlinedTextField(
             value = rootfs,
-            onValueChange = { rootfs = it; viewModel.updateUrls(kernel, initrd, rootfs) },
+            onValueChange = { rootfs = it; viewModel.updateUrls(kernel, initrd, rootfs, qemu) },
             label = { Text(stringResource(R.string.system_image_rootfs_url)) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+        )
+        Spacer(Modifier.height(PodroidTokens.Spacing.SM))
+        OutlinedTextField(
+            value = qemu,
+            onValueChange = { qemu = it; viewModel.updateUrls(kernel, initrd, rootfs, qemu) },
+            label = { Text(stringResource(R.string.system_image_qemu_url)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),

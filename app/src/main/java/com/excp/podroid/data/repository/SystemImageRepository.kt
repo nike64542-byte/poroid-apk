@@ -14,21 +14,30 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.zip.GZIPInputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Manages the versioned system-image downloads (kernel, initramfs, rootfs).
+ * Manages the versioned VM-image downloads (kernel, initramfs, rootfs, QEMU).
  *
- * The VM engines read fixed paths in [context.filesDir] (`vmlinuz-virt`,
- * `initrd.img`, `kali-rootfs.squashfs`). [SystemImageRepository] downloads the
- * user-specified URLs there so no engine code changes; it simply replaces the
- * "bundled asset" source with a "downloaded from URL" source.
+ * Nothing is bundled in the APK — the user pastes the four download URLs in
+ * the first-run setup wizard and this repository streams them to
+ * [context.filesDir] where the VM engines already look:
  *
- * The three download targets mapped to the filenames the engines expect:
  *   - kernel  -> filesDir/vmlinuz-virt
  *   - initram -> filesDir/initrd.img
  *   - rootfs  -> filesDir/kali-rootfs.squashfs
+ *   - QEMU    -> filesDir/qemu-assets.tar.gz, then unpacked:
+ *                  *.so           -> filesDir/  (libqemu-system-aarch64.so,
+ *                                                libslirp.so,
+ *                                                libpodroid-bridge.so,
+ *                                                libpodroid-launcher.so)
+ *                  qemu/efi*.rom  -> filesDir/qemu/efi-virtio.rom
+ *                  qemu/keymaps/  -> filesDir/qemu/keymaps/
+ *
+ * QemuEngine reads .so from filesDir first (falls back to the APK jniLibs
+ * copy), so the downloaded binaries win without an app reinstall.
  */
 @Singleton
 class SystemImageRepository @Inject constructor(
@@ -39,11 +48,13 @@ class SystemImageRepository @Inject constructor(
         private val KEY_KERNEL_URL = stringPreferencesKey("system_image_kernel_url")
         private val KEY_INITRD_URL = stringPreferencesKey("system_image_initrd_url")
         private val KEY_ROOTFS_URL = stringPreferencesKey("system_image_rootfs_url")
+        private val KEY_QEMU_URL   = stringPreferencesKey("system_image_qemu_url")
         private val KEY_DOWNLOADED = booleanPreferencesKey("system_image_downloaded")
 
         const val KERNEL_URL_DEFAULT   = "https://github.com/nike64542-byte/poroid-kernel/releases/latest/download/vmlinuz-virt"
         const val INITRD_URL_DEFAULT   = "https://github.com/nike64542-byte/poroid-rootfs/releases/latest/download/initrd.img"
         const val ROOTFS_URL_DEFAULT   = "https://github.com/nike64542-byte/poroid-rootfs/releases/latest/download/kali-rootfs.squashfs"
+        const val QEMU_URL_DEFAULT     = "https://github.com/nike64542-byte/poroid-qemu/releases/latest/download/qemu-assets.tar.gz"
     }
 
     private val prefs = context.dataStore.data
@@ -53,19 +64,22 @@ class SystemImageRepository @Inject constructor(
     fun kernelFile(): File = File(context.filesDir, "vmlinuz-virt")
     fun initrdFile(): File = File(context.filesDir, "initrd.img")
     fun rootfsFile(): File = File(context.filesDir, "kali-rootfs.squashfs")
+    fun qemuArchiveFile(): File = File(context.filesDir, "qemu-assets.tar.gz")
 
     suspend fun kernelUrl(): String = (prefs.first()[KEY_KERNEL_URL] ?: KERNEL_URL_DEFAULT)
     suspend fun initrdUrl(): String = (prefs.first()[KEY_INITRD_URL] ?: INITRD_URL_DEFAULT)
     suspend fun rootfsUrl(): String = (prefs.first()[KEY_ROOTFS_URL] ?: ROOTFS_URL_DEFAULT)
+    suspend fun qemuUrl(): String = (prefs.first()[KEY_QEMU_URL] ?: QEMU_URL_DEFAULT)
 
-    /** True once the user has successfully downloaded all three images this install. */
+    /** True once the user has successfully downloaded everything this install. */
     suspend fun isDownloaded(): Boolean = prefs.first()[KEY_DOWNLOADED] ?: false
 
-    suspend fun setUrls(kernel: String, initrd: String, rootfs: String) {
+    suspend fun setUrls(kernel: String, initrd: String, rootfs: String, qemu: String) {
         context.dataStore.edit {
             it[KEY_KERNEL_URL] = kernel.trim()
             it[KEY_INITRD_URL] = initrd.trim()
             it[KEY_ROOTFS_URL] = rootfs.trim()
+            it[KEY_QEMU_URL] = qemu.trim()
         }
     }
 
@@ -117,12 +131,33 @@ class SystemImageRepository @Inject constructor(
         }
     }
 
-    /** Downloads all three images; returns per-file byte counts. */
+    /**
+     * Unpacks the QEMU asset tarball (tar.gz) the engines need:
+     *   - the four *.so binaries   -> filesDir/
+     *   - qemu/efi-virtio.rom      -> filesDir/qemu/efi-virtio.rom
+     *   - qemu/keymaps/*           -> filesDir/qemu/keymaps/
+     *
+     * Java has no tar reader, so shell out to `tar` (present on Android).
+     */
+    suspend fun unpackQemuArchive(archive: File) {
+        val proc = ProcessBuilder(
+            "tar", "xzf", archive.absolutePath,
+            "-C", context.filesDir.absolutePath,
+        ).redirectErrorStream(true).start()
+        proc.waitFor()
+        if (proc.exitValue() != 0) {
+            throw IOException("tar failed to unpack ${archive.name}")
+        }
+    }
+
+    /** Downloads everything; returns per-file byte counts. */
     suspend fun downloadAll(): Map<String, Long> = withContext(Dispatchers.IO) {
         val result = LinkedHashMap<String, Long>()
         result["kernel"] = download(kernelUrl(), kernelFile())
         result["initrd"] = download(initrdUrl(), initrdFile())
         result["rootfs"] = download(rootfsUrl(), rootfsFile())
+        result["qemu"] = download(qemuUrl(), qemuArchiveFile())
+        unpackQemuArchive(qemuArchiveFile())
         markDownloaded(true)
         result
     }

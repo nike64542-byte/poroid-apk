@@ -51,8 +51,13 @@ class ProxySessionClient(private val tag: String) : TerminalSessionClient {
  * return, log, or throw) - this only covers the part that was identical.
  */
 object TerminalBridge {
-    fun executable(context: Context): File =
-        File(context.applicationInfo.nativeLibraryDir, "libpodroid-bridge.so")
+    fun executable(context: Context): File {
+        // Prefer a user-downloaded bridge (setup wizard wrote it to filesDir);
+        // fall back to the APK-bundled jniLibs copy when present.
+        val downloaded = File(context.filesDir, "libpodroid-bridge.so")
+        if (downloaded.exists()) return downloaded
+        return File(context.applicationInfo.nativeLibraryDir, "libpodroid-bridge.so")
+    }
 
     /**
      * [onResize] non-null builds a [ResizeNotifyingSession] (AVF); null builds

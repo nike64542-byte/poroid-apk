@@ -768,9 +768,11 @@ class QemuEngine @Inject constructor(
 
         // Wrap QEMU in podroid-launcher when available — it sets PR_SET_PDEATHSIG
         // so QEMU dies with the app on uninstall/OOM/force-stop instead of leaking
-        // as an orphan under PPID=1. If the launcher is missing (older deploys),
-        // fall back to spawning QEMU directly.
-        val launcher = File(context.applicationInfo.nativeLibraryDir, "libpodroid-launcher.so")
+        // as an orphan under PPID=1. If the launcher is missing (older deploys,
+        // or not yet downloaded), fall back to spawning QEMU directly.
+        val launcherDownloaded = File(context.filesDir, "libpodroid-launcher.so")
+        val launcher = if (launcherDownloaded.exists()) launcherDownloaded
+            else File(context.applicationInfo.nativeLibraryDir, "libpodroid-launcher.so")
         return if (launcher.exists()) {
             listOf(launcher.absolutePath, qemuExe.absolutePath) + args
         } else {
@@ -821,6 +823,10 @@ class QemuEngine @Inject constructor(
     }
 
     private fun qemuExecutable(): File? {
+        // Prefer a user-downloaded binary (setup wizard wrote it to filesDir);
+        // fall back to the APK-bundled jniLibs copy when present.
+        val downloaded = File(context.filesDir, "libqemu-system-aarch64.so")
+        if (downloaded.exists()) return downloaded
         val exe = File(context.applicationInfo.nativeLibraryDir, "libqemu-system-aarch64.so")
         return if (exe.exists()) exe else null
     }
