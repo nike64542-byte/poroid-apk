@@ -94,6 +94,7 @@ import com.excp.podroid.ui.components.PodroidChipColors
 import com.excp.podroid.ui.components.PodroidSectionLabel
 import com.excp.podroid.ui.components.PodroidSwitch
 import com.excp.podroid.ui.components.PodroidTopBar
+import com.excp.podroid.ui.components.distroLabelRes
 import com.excp.podroid.ui.theme.PodroidTokens
 import com.excp.podroid.data.repository.LanguageManager
 
@@ -123,6 +124,7 @@ fun SettingsScreen(
     val portForwardPartialWarning by viewModel.portForwardPartialWarning.collectAsStateWithLifecycle()
     val usbPassthrough by viewModel.usbPassthroughEnabled.collectAsStateWithLifecycle()
     val autostartOnBoot by viewModel.autostartOnBoot.collectAsStateWithLifecycle()
+    val distro by viewModel.distro.collectAsStateWithLifecycle()
 
     // rememberSaveable: changing the language calls activity.recreate(), which
     // would otherwise silently close any open dialog and collapse Advanced.
@@ -376,6 +378,7 @@ fun SettingsScreen(
                     avfRunning = avfRunning,
                     onRunAvfDiagnostic = runAvfDiagnostic,
                     onExportLogs = { viewModel.exportConsoleLogs() },
+                    distroLabel = stringResource(distroLabelRes(distro)),
                 )
 
                 Spacer(Modifier.height(PodroidTokens.Spacing.XL2))
@@ -569,12 +572,13 @@ private fun AboutSection(
     avfRunning: Boolean,
     onRunAvfDiagnostic: () -> Unit,
     onExportLogs: () -> Unit,
+    distroLabel: String,
 ) {
     PodroidSectionLabel(stringResource(R.string.about))
     PodroidListRow(label = stringResource(R.string.version_label), value = "v${BuildConfig.VERSION_NAME}", mono = true)
     PodroidListRow(label = stringResource(R.string.qemu_label), value = "v${BuildConfig.QEMU_VERSION}", mono = true)
     PodroidListRow(label = stringResource(R.string.architecture), value = "AArch64", mono = true)
-    PodroidListRow(label = stringResource(R.string.linux_distro), value = "Kali Rolling", mono = true)
+    PodroidListRow(label = stringResource(R.string.linux_distro), value = distroLabel, mono = true)
     Spacer(Modifier.height(PodroidTokens.Spacing.MD))
     val uriHandler = LocalUriHandler.current
     PodroidGhostButton(

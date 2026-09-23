@@ -15,10 +15,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.excp.podroid.BuildConfig
 import com.excp.podroid.R
+import com.excp.podroid.data.repository.Distro
 import com.excp.podroid.data.repository.LanguageManager
 import com.excp.podroid.data.repository.PortForwardRepository
 import com.excp.podroid.data.repository.PortForwardRule
 import com.excp.podroid.data.repository.SettingsRepository
+import com.excp.podroid.data.repository.SystemImageRepository
 import com.excp.podroid.di.ApplicationScope
 import com.excp.podroid.engine.EngineHolder
 import com.excp.podroid.engine.EngineSelection
@@ -75,8 +77,17 @@ class SettingsViewModel @Inject constructor(
     private val portForwardRepository: PortForwardRepository,
     private val engine: EngineHolder,
     private val languageManager: LanguageManager,
+    private val systemImageRepository: SystemImageRepository,
     @ApplicationScope private val externalScope: CoroutineScope,
 ) : ViewModel() {
+
+    private val _distro = MutableStateFlow(Distro.KALI)
+    /** Guest distro picked in the first-run wizard (Settings → About + diagnostics). */
+    val distro: StateFlow<Distro> = _distro.asStateFlow()
+
+    init {
+        viewModelScope.launch { _distro.value = systemImageRepository.distro() }
+    }
 
     val vmRamMb: StateFlow<Int> = settingsRepository.vmRamMb
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 512)
@@ -513,7 +524,7 @@ class SettingsViewModel @Inject constructor(
             listOf(
                 "libqemu-system-aarch64.so", "libpodroid-launcher.so",
                 "libpodroid-bridge.so", "libslirp.so",
-                "vmlinuz-virt", "initrd.img", "kali-rootfs.squashfs",
+                "vmlinuz-virt", "initrd.img", systemImageRepository.rootfsFile().name,
             ).forEach { name ->
                 appendLine(com.excp.podroid.util.ExecPerms.describe(File(context.filesDir, name)))
             }

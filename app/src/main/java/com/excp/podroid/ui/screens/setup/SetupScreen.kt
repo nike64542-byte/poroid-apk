@@ -27,12 +27,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -58,13 +60,16 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.excp.podroid.R
+import com.excp.podroid.data.repository.Distro
 import com.excp.podroid.ui.components.AdaptiveContainer
 import com.excp.podroid.ui.components.PermissionRows
+import com.excp.podroid.ui.components.PodroidChipColors
 import com.excp.podroid.ui.components.PodroidGhostButton
 import com.excp.podroid.ui.components.PodroidListRow
 import com.excp.podroid.ui.components.PodroidPrimaryButton
@@ -74,6 +79,7 @@ import com.excp.podroid.ui.components.VmBandwidthChips
 import com.excp.podroid.ui.components.VmCpuChips
 import com.excp.podroid.ui.components.VmRamChips
 import com.excp.podroid.ui.components.VmStorageChips
+import com.excp.podroid.ui.components.distroLabelRes
 import com.excp.podroid.ui.theme.PodroidTokens
 import com.excp.podroid.util.AppPermission
 import com.excp.podroid.util.AppPermissions
@@ -419,6 +425,7 @@ private fun SystemImageDownloadPage(
     val rootfsUrl by viewModel.rootfsUrl.collectAsStateWithLifecycle()
     val qemuUrl by viewModel.qemuUrl.collectAsStateWithLifecycle()
     val downloadState by viewModel.downloadState.collectAsStateWithLifecycle()
+    val distro by viewModel.distro.collectAsStateWithLifecycle()
 
     // Seed once from the persisted defaults (empty fields until the flow emits).
     LaunchedEffect(kernelUrl) {
@@ -427,8 +434,11 @@ private fun SystemImageDownloadPage(
     LaunchedEffect(initrdUrl) {
         if (initrd.isEmpty() && !initrdUrl.isNullOrEmpty()) initrd = initrdUrl!!
     }
+    // Unlike the other three, the rootfs URL follows the flow unconditionally:
+    // a distro switch repoints it at the new preset. User edits stay put — they
+    // write to the repository but never re-emit on _rootfsUrl.
     LaunchedEffect(rootfsUrl) {
-        if (rootfs.isEmpty() && !rootfsUrl.isNullOrEmpty()) rootfs = rootfsUrl!!
+        if (!rootfsUrl.isNullOrEmpty()) rootfs = rootfsUrl!!
     }
     LaunchedEffect(qemuUrl) {
         if (qemu.isEmpty() && !qemuUrl.isNullOrEmpty()) qemu = qemuUrl!!
@@ -447,6 +457,28 @@ private fun SystemImageDownloadPage(
             )
         },
     ) {
+        Text(
+            text = stringResource(R.string.linux_distro),
+            style = MaterialTheme.typography.titleSmall,
+        )
+        Spacer(Modifier.height(PodroidTokens.Spacing.SM))
+        Row(horizontalArrangement = Arrangement.spacedBy(PodroidTokens.Spacing.SM)) {
+            Distro.values().forEach { d ->
+                FilterChip(
+                    selected = distro == d,
+                    onClick = { viewModel.selectDistro(d) },
+                    label = {
+                        Text(
+                            stringResource(distroLabelRes(d)),
+                            fontWeight = if (distro == d) FontWeight.Bold else FontWeight.Normal,
+                        )
+                    },
+                    shape = RoundedCornerShape(PodroidTokens.Radius.Chip),
+                    colors = PodroidChipColors(),
+                )
+            }
+        }
+        Spacer(Modifier.height(PodroidTokens.Spacing.XL))
         OutlinedTextField(
             value = kernel,
             onValueChange = { kernel = it; viewModel.updateUrls(kernel, initrd, rootfs, qemu) },

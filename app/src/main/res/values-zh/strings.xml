@@ -103,6 +103,9 @@
     <string name="about">关于</string>
     <string name="architecture">架构</string>
     <string name="linux_distro">Linux 发行版</string>
+    <string name="distro_kali">Kali Linux</string>
+    <string name="distro_debian">Debian 12</string>
+    <string name="distro_ubuntu">Ubuntu 24.04</string>
     <string name="documentation">文档</string>
     <string name="export_diagnostic_log">导出诊断日志</string>
     <string name="avf_diagnostic">AVF (pKVM) 诊断</string>
@@ -239,7 +242,7 @@
     <string name="system_image_download_description">填写内核、initramfs 和 rootfs 的下载地址，下载后将用于启动虚拟机。</string>
     <string name="system_image_kernel_url">内核地址 (vmlinuz-virt)</string>
     <string name="system_image_initrd_url">initramfs 地址 (initrd.img)</string>
-    <string name="system_image_rootfs_url">rootfs 地址 (kali-rootfs.squashfs)</string>
+    <string name="system_image_rootfs_url">rootfs 地址</string>
     <string name="system_image_qemu_url">QEMU 地址 (qemu-assets.tar.gz)</string>
     <string name="system_image_download_btn">下载</string>
     <string name="system_image_download_in_progress">正在下载系统镜像…</string>

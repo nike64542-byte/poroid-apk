@@ -2,6 +2,7 @@ package com.excp.podroid.ui.screens.setup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.excp.podroid.data.repository.Distro
 import com.excp.podroid.data.repository.SettingsRepository
 import com.excp.podroid.data.repository.SystemImageRepository
 import com.excp.podroid.engine.VmEngine
@@ -31,6 +32,9 @@ class SetupViewModel @Inject constructor(
     private val _qemuUrl = MutableStateFlow<String?>(null)
     val qemuUrl: StateFlow<String?> = _qemuUrl.asStateFlow()
 
+    private val _distro = MutableStateFlow(Distro.KALI)
+    val distro: StateFlow<Distro> = _distro.asStateFlow()
+
     private val _downloaded = MutableStateFlow(false)
     val downloaded: StateFlow<Boolean> = _downloaded.asStateFlow()
 
@@ -43,6 +47,7 @@ class SetupViewModel @Inject constructor(
             _initrdUrl.value = systemImageRepository.initrdUrl()
             _rootfsUrl.value = systemImageRepository.rootfsUrl()
             _qemuUrl.value = systemImageRepository.qemuUrl()
+            _distro.value = systemImageRepository.distro()
             _downloaded.value = systemImageRepository.isDownloaded()
         }
     }
@@ -53,6 +58,20 @@ class SetupViewModel @Inject constructor(
             systemImageRepository.setUrls(kernel, initrd, rootfs, qemu)
             systemImageRepository.markDownloaded(false)
             _downloaded.value = false
+        }
+    }
+
+    /**
+     * First-run-only distro pick: persists the selection, repoints the rootfs
+     * URL at its preset (emits so the wizard field follows), and clears the
+     * downloaded flag. Runtime switching is not supported — Settings →
+     * Reset VM wipes DataStore and re-runs this wizard.
+     */
+    fun selectDistro(distro: Distro) {
+        _distro.value = distro
+        viewModelScope.launch {
+            systemImageRepository.setDistro(distro)
+            _rootfsUrl.value = systemImageRepository.rootfsUrl()
         }
     }
 

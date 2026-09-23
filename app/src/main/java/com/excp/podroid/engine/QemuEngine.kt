@@ -50,6 +50,7 @@ import javax.inject.Singleton
 @Singleton
 class QemuEngine @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val systemImageRepository: com.excp.podroid.data.repository.SystemImageRepository,
     private val settingsRepository: com.excp.podroid.data.repository.SettingsRepository,
 ) : VmEngine {
     private val _state = MutableStateFlow<VmState>(VmState.Idle)
@@ -613,7 +614,7 @@ class QemuEngine @Inject constructor(
         }
     }
 
-    private fun buildCommand(
+    private suspend fun buildCommand(
         qemuExe: File,
         portForwards: List<PortForwardRule>,
         config: VmConfig,
@@ -677,7 +678,7 @@ class QemuEngine @Inject constructor(
             args += "-drive";  args += "file=${storagePath.absolutePath},if=none,id=drive1,format=raw,cache=writeback,aio=threads,discard=unmap,detect-zeroes=unmap"
         }
 
-        val rootfsImg = File(context.filesDir, "kali-rootfs.squashfs")
+        val rootfsImg = systemImageRepository.rootfsFile()
         if (rootfsImg.exists()) {
             // Dedicated iothread for the read-only squashfs so its decompression
             // reads don't queue behind storage.img writes on iothread0.

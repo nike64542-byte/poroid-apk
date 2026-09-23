@@ -1042,9 +1042,10 @@ class AvfEngine @Inject constructor(
         // /etc/inittab spawns the getty on the device named by the
         // `podroid.tty=` marker.
         //
-        // `podroid.backend=avf` is a stable backend identifier — used by
-        // guest OpenRC scripts (podroid-network, podroid-vsock) to pick
-        // AVF-specific behaviour without coupling to the tty choice.
+        // `podroid.backend=avf` is a stable backend identifier — used by the
+        // guest podroid-network/podroid-vsock services (OpenRC or systemd,
+        // depending on distro) to pick AVF-specific behaviour without
+        // coupling to the tty choice.
         //
         // `podroid.epoch=...` seeds the wall clock — AVF/crosvm doesn't
         // wire an RTC the way QEMU TCG does, so without this the guest

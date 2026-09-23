@@ -19,15 +19,27 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
+ * The guest distro selected in the first-run wizard. Exactly one rootfs is
+ * downloaded per install; switching means Settings → Reset VM (wipe) and
+ * running the wizard again — there is no runtime distro switch.
+ */
+enum class Distro(val asset: String) {
+    KALI("kali-rootfs.squashfs"),
+    DEBIAN("debian-rootfs.squashfs"),
+    UBUNTU("ubuntu-rootfs.squashfs"),
+}
+
+/**
  * Manages the versioned VM-image downloads (kernel, initramfs, rootfs, QEMU).
  *
- * Nothing is bundled in the APK — the user pastes the four download URLs in
- * the first-run setup wizard and this repository streams them to
+ * Nothing is bundled in the APK — the first-run wizard picks a [Distro]
+ * (seeding its preset rootfs URL on the shared poroid-rootfs release; all four
+ * URLs stay user-editable) and this repository streams them to
  * [context.filesDir] where the VM engines already look:
  *
  *   - kernel  -> filesDir/vmlinuz-virt
  *   - initram -> filesDir/initrd.img
- *   - rootfs  -> filesDir/kali-rootfs.squashfs
+ *   - rootfs  -> filesDir/<distro asset>  (e.g. kali-rootfs.squashfs)
  *   - QEMU    -> filesDir/qemu-assets.tar.gz, then unpacked:
  *                  *.so           -> filesDir/  (libqemu-system-aarch64.so,
  *                                                libslirp.so,
@@ -50,11 +62,16 @@ class SystemImageRepository @Inject constructor(
         private val KEY_ROOTFS_URL = stringPreferencesKey("system_image_rootfs_url")
         private val KEY_QEMU_URL   = stringPreferencesKey("system_image_qemu_url")
         private val KEY_DOWNLOADED = booleanPreferencesKey("system_image_downloaded")
+        private val KEY_DISTRO     = stringPreferencesKey("system_image_distro")
 
         const val KERNEL_URL_DEFAULT   = "https://github.com/nike64542-byte/poroid-kernel/releases/download/latest/vmlinuz-virt"
         const val INITRD_URL_DEFAULT   = "https://github.com/nike64542-byte/poroid-rootfs/releases/download/latest/initrd.img"
-        const val ROOTFS_URL_DEFAULT   = "https://github.com/nike64542-byte/poroid-rootfs/releases/download/latest/kali-rootfs.squashfs"
+        const val ROOTFS_BASE_URL      = "https://github.com/nike64542-byte/poroid-rootfs/releases/download/latest"
+        const val ROOTFS_URL_DEFAULT   = "$ROOTFS_BASE_URL/kali-rootfs.squashfs"
         const val QEMU_URL_DEFAULT     = "https://github.com/nike64542-byte/poroid-qemu/releases/download/latest/qemu-assets.tar.gz"
+
+        /** Preset rootfs URL for a distro on the shared poroid-rootfs release. */
+        fun presetUrl(distro: Distro): String = "$ROOTFS_BASE_URL/${distro.asset}"
     }
 
     private val prefs = context.dataStore.data
@@ -63,12 +80,35 @@ class SystemImageRepository @Inject constructor(
     fun filesDir(): File = context.filesDir
     fun kernelFile(): File = File(context.filesDir, "vmlinuz-virt")
     fun initrdFile(): File = File(context.filesDir, "initrd.img")
-    fun rootfsFile(): File = File(context.filesDir, "kali-rootfs.squashfs")
+    suspend fun rootfsFile(): File = File(context.filesDir, distro().asset)
     fun qemuArchiveFile(): File = File(context.filesDir, "qemu-assets.tar.gz")
+
+    /** Selected guest distro; defaults to [Distro.KALI] (or falls back on a bad stored value). */
+    suspend fun distro(): Distro {
+        val stored = prefs.first()[KEY_DISTRO] ?: return Distro.KALI
+        return runCatching { Distro.valueOf(stored) }.getOrDefault(Distro.KALI)
+    }
+
+    /**
+     * Selects the guest distro and repoints the rootfs URL at its preset on
+     * the shared release. Only called from the first-run wizard (a runtime
+     * switch is not supported — Settings → Reset VM wipes and re-runs it).
+     * Clears the downloaded flag so the new rootfs must be fetched.
+     */
+    suspend fun setDistro(distro: Distro) {
+        context.dataStore.edit {
+            it[KEY_DISTRO] = distro.name
+            it[KEY_ROOTFS_URL] = presetUrl(distro)
+            it[KEY_DOWNLOADED] = false
+        }
+    }
 
     suspend fun kernelUrl(): String = (prefs.first()[KEY_KERNEL_URL] ?: KERNEL_URL_DEFAULT)
     suspend fun initrdUrl(): String = (prefs.first()[KEY_INITRD_URL] ?: INITRD_URL_DEFAULT)
-    suspend fun rootfsUrl(): String = (prefs.first()[KEY_ROOTFS_URL] ?: ROOTFS_URL_DEFAULT)
+    suspend fun rootfsUrl(): String {
+        val p = prefs.first()
+        return p[KEY_ROOTFS_URL] ?: presetUrl(distro())
+    }
     suspend fun qemuUrl(): String = (prefs.first()[KEY_QEMU_URL] ?: QEMU_URL_DEFAULT)
 
     /** True once the user has successfully downloaded everything this install. */
