@@ -93,17 +93,21 @@ class SystemImageRepository @Inject constructor(
      * so the engines never read a partial file. Returns bytes downloaded.
      */
     suspend fun download(url: String, dest: File): Long = withContext(Dispatchers.IO) {
+        // Users often paste URLs with a stray leading/trailing space or a
+        // mid-string newline; strip ALL whitespace so "repo /releases/…"
+        // still resolves. Also collapse any accidental paste of the tag page.
+        val cleanUrl = url.filter { !it.isWhitespace() }
         val tmp = File(dest.parentFile, dest.name + ".download")
         var connection: HttpURLConnection? = null
         try {
-            connection = URL(url).openConnection() as HttpURLConnection
+            connection = URL(cleanUrl).openConnection() as HttpURLConnection
             connection.connectTimeout = 30_000
             connection.readTimeout = 60_000
             connection.setRequestProperty("User-Agent", "Podroid")
             connection.instanceFollowRedirects = true
             val code = connection.responseCode
             if (code !in 200..299) {
-                throw IOException("HTTP $code for $url")
+                throw IOException("HTTP $code for $cleanUrl")
             }
             var total = 0L
             connection.inputStream.use { input ->
