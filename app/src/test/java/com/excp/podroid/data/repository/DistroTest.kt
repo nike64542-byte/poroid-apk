@@ -1,6 +1,7 @@
 package com.excp.podroid.data.repository
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -32,6 +33,18 @@ class DistroTest {
                 SystemImageRepository.versionedPresetUrl(distro),
             )
         }
+    }
+
+    @Test
+    fun packageUpdateStateIsPerDistro() {
+        assertEquals("first_package_update_done_manjaro", firstPackageUpdateKeyName(Distro.MANJARO))
+        assertEquals("first_package_update_done_gentoo", firstPackageUpdateKeyName(Distro.GENTOO))
+    }
+
+    @Test
+    fun legacyAptKeyOnlyMigratesKali() {
+        assertTrue(legacyFirstUpdateApplies(Distro.KALI))
+        assertFalse(legacyFirstUpdateApplies(Distro.FEDORA))
     }
 
     @Test

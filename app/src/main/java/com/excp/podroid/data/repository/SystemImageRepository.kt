@@ -65,6 +65,7 @@ enum class Distro(
 @Singleton
 class SystemImageRepository @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val settingsRepository: SettingsRepository,
 ) {
 
     companion object {
@@ -108,11 +109,13 @@ class SystemImageRepository @Inject constructor(
      * Clears the downloaded flag so the new rootfs must be fetched.
      */
     suspend fun setDistro(distro: Distro) {
+        val previous = distro()
         context.dataStore.edit {
             it[KEY_DISTRO] = distro.name
             it[KEY_ROOTFS_URL] = presetUrl(distro)
             it[KEY_DOWNLOADED] = false
         }
+        if (previous != distro) settingsRepository.clearFirstPackageUpdateDone(distro)
     }
 
     suspend fun kernelUrl(): String = (prefs.first()[KEY_KERNEL_URL] ?: KERNEL_URL_DEFAULT)

@@ -38,6 +38,11 @@ internal val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
     corruptionHandler = ReplaceFileCorruptionHandler { emptyPreferences() },
 )
 
+internal fun firstPackageUpdateKeyName(distro: Distro): String =
+    "first_package_update_done_${distro.name.lowercase()}"
+
+internal fun legacyFirstUpdateApplies(distro: Distro): Boolean = distro == Distro.KALI
+
 @Singleton
 class SettingsRepository @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -232,6 +237,28 @@ class SettingsRepository @Inject constructor(
     val firstAptUpdateDone: Flow<Boolean> = pref(KEY_FIRST_APT_UPDATE_DONE, false)
     suspend fun markFirstAptUpdateDone()    = set(KEY_FIRST_APT_UPDATE_DONE, true)
     suspend fun isFirstAptUpdateDone(): Boolean = firstAptUpdateDone.first()
+
+    private fun firstPackageUpdateKey(distro: Distro): Preferences.Key<Boolean> =
+        booleanPreferencesKey(firstPackageUpdateKeyName(distro))
+
+    suspend fun isFirstPackageUpdateDone(distro: Distro): Boolean {
+        val values = context.dataStore.data
+            .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
+            .first()
+        return values[firstPackageUpdateKey(distro)]
+            ?: (legacyFirstUpdateApplies(distro) && values[KEY_FIRST_APT_UPDATE_DONE] == true)
+    }
+
+    suspend fun markFirstPackageUpdateDone(distro: Distro) {
+        context.dataStore.edit { it[firstPackageUpdateKey(distro)] = true }
+    }
+
+    suspend fun clearFirstPackageUpdateDone(distro: Distro) {
+        context.dataStore.edit {
+            it.remove(firstPackageUpdateKey(distro))
+            if (legacyFirstUpdateApplies(distro)) it.remove(KEY_FIRST_APT_UPDATE_DONE)
+        }
+    }
 
     /**
      * Persists all first-run setup choices in a single transaction so a process
