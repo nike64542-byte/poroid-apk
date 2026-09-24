@@ -5,6 +5,7 @@
 /terminal-view/build/
 *.apk
 *.aab
+.worktrees/
 
 # Gradle
 .gradle/
