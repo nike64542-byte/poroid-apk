@@ -20,6 +20,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -462,7 +463,10 @@ private fun SystemImageDownloadPage(
             style = MaterialTheme.typography.titleSmall,
         )
         Spacer(Modifier.height(PodroidTokens.Spacing.SM))
-        Row(horizontalArrangement = Arrangement.spacedBy(PodroidTokens.Spacing.SM)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(PodroidTokens.Spacing.SM),
+            verticalArrangement = Arrangement.spacedBy(PodroidTokens.Spacing.XS),
+        ) {
             Distro.values().forEach { d ->
                 FilterChip(
                     selected = distro == d,

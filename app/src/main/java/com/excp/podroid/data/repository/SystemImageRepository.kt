@@ -27,6 +27,13 @@ enum class Distro(val asset: String) {
     KALI("kali-rootfs.squashfs"),
     DEBIAN("debian-rootfs.squashfs"),
     UBUNTU("ubuntu-rootfs.squashfs"),
+    FEDORA("fedora-rootfs.squashfs"),
+    ROCKY("rocky-rootfs.squashfs"),
+    ALMA("alma-rootfs.squashfs"),
+    OPENSUSE("opensuse-rootfs.squashfs"),
+    ARCH("arch-rootfs.squashfs"),
+    MANJARO("manjaro-rootfs.squashfs"),
+    GENTOO("gentoo-rootfs.squashfs"),
 }
 
 /**

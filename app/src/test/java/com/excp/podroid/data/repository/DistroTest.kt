@@ -37,4 +37,21 @@ class DistroTest {
             .getOrDefault(Distro.KALI)
         assertEquals(Distro.KALI, fallback)
     }
+
+    @Test
+    fun allTenDistrosHaveReleaseAssets() {
+        val expected = mapOf(
+            Distro.KALI to "kali-rootfs.squashfs",
+            Distro.DEBIAN to "debian-rootfs.squashfs",
+            Distro.UBUNTU to "ubuntu-rootfs.squashfs",
+            Distro.FEDORA to "fedora-rootfs.squashfs",
+            Distro.ROCKY to "rocky-rootfs.squashfs",
+            Distro.ALMA to "alma-rootfs.squashfs",
+            Distro.OPENSUSE to "opensuse-rootfs.squashfs",
+            Distro.ARCH to "arch-rootfs.squashfs",
+            Distro.MANJARO to "manjaro-rootfs.squashfs",
+            Distro.GENTOO to "gentoo-rootfs.squashfs",
+        )
+        assertEquals(expected, Distro.values().associateWith { it.asset })
+    }
 }

@@ -106,6 +106,13 @@
     <string name="distro_kali">Kali Linux</string>
     <string name="distro_debian">Debian 12</string>
     <string name="distro_ubuntu">Ubuntu 24.04</string>
+    <string name="distro_fedora">Fedora Linux</string>
+    <string name="distro_rocky">Rocky Linux</string>
+    <string name="distro_alma">AlmaLinux</string>
+    <string name="distro_opensuse">openSUSE Leap</string>
+    <string name="distro_arch">Arch Linux</string>
+    <string name="distro_manjaro">Manjaro</string>
+    <string name="distro_gentoo">Gentoo Linux</string>
     <string name="documentation">Documentation</string>
     <string name="export_diagnostic_log">Export diagnostic log</string>
     <string name="avf_diagnostic">AVF (pKVM) diagnostic</string>
