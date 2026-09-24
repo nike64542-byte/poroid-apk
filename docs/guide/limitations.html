@@ -186,8 +186,8 @@
       <h3>X11 is blurry or laggy</h3>
       <p>The VNC client uses uncompressed Raw encoding (ZRLE is currently disabled), so high resolutions generate large frame payloads. Open the X11 viewer settings and pick a lower resolution preset (720p or 900p are good starting points). If you are on AVF, the latency should be much lower than on QEMU; on QEMU, latency will scale with how busy the TCG threads are.</p>
 
-      <h3>apt still reports the old Kali release after an app update</h3>
-      <p>A guest that existed before the Kali switch gets the new Kali files, because the system image is replaced on update, but its package database lives in the persistent overlay and still describes the previous state. Nothing is broken by it - the files really are the new ones - though <code>apt list --upgradable</code> may list many base packages as outdated. Running <code>apt update &amp;&amp; apt upgrade</code> in the guest brings the database back in line, at the cost of writing a second copy of the base packages into the overlay. A VM created after the Kali switch is unaffected.</p>
+      <h3>Package metadata after changing images</h3>
+      <p>After switching distributions, the selected image starts with its own package database while the persistent overlay keeps guest data. Run the selected distribution's metadata refresh command before installing or upgrading packages.</p>
 
       <h3>I changed RAM or CPU count and nothing happened</h3>
       <p>RAM and CPU count are passed to QEMU at launch time and cannot be hot-changed. Stop the VM from the main screen, then start it again - the new values will be used. Port-forward rules and SSH toggle changes take effect without a restart.</p>

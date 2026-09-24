@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Getting started · Podroid docs</title>
-  <meta name="description" content="Install Podroid, run the setup wizard, and boot your first Kali Linux VM on Android." />
+  <meta name="description" content="Install Podroid, choose an arm64 Linux distribution, and boot it on Android." />
   <link rel="icon" type="image/png" href="../logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -49,7 +49,7 @@
 
     <main class="content">
       <h1>Getting started</h1>
-      <p class="lead">From APK download to a running Kali Linux VM in about five minutes, plus a first boot that takes a little longer than you might expect - and why.</p>
+      <p class="lead">From APK download to a running arm64 Linux VM in about five minutes, plus a first boot that takes a little longer than you might expect - and why.</p>
 
       <h2>Install</h2>
       <p>Podroid is distributed as a standard APK sideload. There is no Play Store listing.</p>
@@ -65,9 +65,12 @@
       </div>
 
       <h2>Setup wizard</h2>
-      <p>The first time you open Podroid a three-step wizard runs before anything else.</p>
+      <p>The first time you open Podroid a four-step wizard runs before anything else.</p>
 
-      <h3>Step 1: Persistent storage size</h3>
+      <h3>Step 1: Linux distribution</h3>
+      <p>Choose Kali, Debian, Ubuntu, Fedora, Rocky, Alma, openSUSE, Arch, Manjaro, or Gentoo. The app downloads that fixed rootfs release on the device and uses it for the selected VM.</p>
+
+      <h3>Step 2: Persistent storage size</h3>
       <p>Choose how large the writable VM disk image will be: from 2 GB up to 512 GB, limited to the free space on your phone. This image lives in the app's private storage and holds everything you install inside the VM - packages, container images, config files. Pick more than you think you need.</p>
 
       <div class="callout note">
@@ -75,10 +78,10 @@
         <p>You can increase the storage size later in Settings, but it can never be shrunk, so start with a size you are comfortable dedicating to the VM.</p>
       </div>
 
-      <h3>Step 2: VM configuration</h3>
+      <h3>Step 3: VM configuration</h3>
       <p>Set the number of virtual CPU cores and the RAM allocation (default 512 MB). You can also toggle SSH here - when enabled, Dropbear starts automatically and the VM is reachable at port 9922 over your local network. These settings can be changed later in Settings.</p>
 
-      <h3>Step 3: Downloads sharing (optional)</h3>
+      <h3>Step 4: Downloads sharing (optional)</h3>
       <p>Grants access to your phone's Downloads folder so you can move files between Android and the VM. Works on both the QEMU and AVF backends. Useful, but skip it if you don't need it.</p>
 
       <div class="callout warn">
@@ -90,7 +93,7 @@
       <p>Tap <strong>Start VM</strong> on the home screen. The first boot takes roughly 50-60 seconds, noticeably longer than the 10-15 seconds of later boots. Two one-time tasks run:</p>
       <ul>
         <li><strong>SSH host key generation:</strong> Dropbear generates RSA, ECDSA, and ED25519 host keys. This takes 25-35 seconds on a typical phone and happens only once; the keys are stored on the persistent overlay and reused on every subsequent boot.</li>
-        <li><strong>Filesystem formatting:</strong> the ext4 storage image is formatted to the size you chose in step 1.</li>
+        <li><strong>Filesystem formatting:</strong> the ext4 storage image is formatted to the size you chose in step 2.</li>
       </ul>
       <p>The notification shows boot stages as they complete: "Starting SSH...", "Almost ready...", then "Ready!" - at which point the VM is fully up and the terminal is interactive.</p>
 

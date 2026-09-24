@@ -111,14 +111,14 @@
       <p>It also shows a VM CPU-load graph, available on the QEMU backend only - on AVF the screen shows a note that the graph is QEMU-only - plus the VM's allocated RAM, CPU cores, disk-image usage, and bandwidth limit.</p>
 
       <h2>Local Linux development environment</h2>
-      <p>The Kali guest is a full persistent Linux system. Install your toolchain once and it survives every reboot on the ext4 overlay.</p>
+      <p>The selected Linux guest is a full persistent system. Install your toolchain once and it survives every reboot on the ext4 overlay.</p>
       <pre><code><span class="c"># Install a development toolchain</span>
 <span class="p">$</span> apt install git nodejs npm python3 python3-pip golang gcc build-essential
 
 <span class="c"># SSH in from a laptop on the same Wi-Fi</span>
 <span class="p">$</span> ssh root@&lt;phone-ip&gt; -p 9922</code></pre>
       <p>Once SSH is working, VS Code Remote-SSH and JetBrains Gateway both connect without any plugin beyond their standard remote-development extension. The phone acts exactly like any remote Linux server from the laptop's point of view.</p>
-      <p>Persistence is handled by the overlayfs stack: all writes go to the ext4 <code>storage.img</code>. Packages you install with <code>apt install</code>, files you create, services you enable with <code>rc-update add</code> - all survive reboots and app updates.</p>
+      <p>Persistence is handled by the overlayfs stack: all writes go to the ext4 <code>storage.img</code>. Packages, files, and services survive reboots and app updates; use the selected distribution's package and service manager.</p>
 
       <div class="callout tip">
         <span class="label">IO-bound vs CPU-bound work</span>
@@ -138,7 +138,7 @@
       <p>See <a href="desktop.html">Desktops &amp; X11 viewer</a> for how to start and configure the Xvnc session. Note that only X11 desktop sessions render correctly; Wayland sessions (GNOME on Wayland, Plasma Wayland, sway) do not render in the viewer - see <a href="limitations.html">Limitations</a>.</p>
 
       <h2>Learning Linux and containers</h2>
-      <p>Podroid gives you a real Linux kernel with cgroup v2, network namespaces, overlayfs, netfilter/nftables, and OpenRC - all on hardware you already own. Nothing is simulated or mocked; the same kernel features that production servers use are present and explorable.</p>
+      <p>Podroid gives you a real Linux kernel with cgroup v2, network namespaces, overlayfs, netfilter/nftables, and the selected distribution's init system - all on hardware you already own. Nothing is simulated or mocked; the same kernel features that production servers use are present and explorable.</p>
       <pre><code><span class="c"># Inspect the cgroup v2 hierarchy</span>
 <span class="p">$</span> mount | grep cgroup
 <span class="p">$</span> ls /sys/fs/cgroup/
@@ -158,7 +158,7 @@
 
 <span class="c"># Inspect nftables rules added by Podman for port forwarding</span>
 <span class="p">$</span> nft list ruleset</code></pre>
-      <p>Because this is a real VM, experiments that would break a shared server are safe here - a factory reset restores a clean Kali image in under a minute. You can deliberately crash the kernel, fill the disk, or misconfigure networking and recover immediately.</p>
+      <p>Because this is a real VM, experiments that would break a shared server are safe here - a factory reset restores a clean selected image in under a minute. You can deliberately crash the kernel, fill the disk, or misconfigure networking and recover immediately.</p>
 
       <h2>Lightweight CLI tools and scripts</h2>
       <p>Running cron jobs, personal bots, data processing scripts, or static site generators is one of the most practical uses on TCG. These workloads are typically IO-bound or short-lived, so the 5-20x CPU penalty of TCG emulation is barely noticeable compared to the time spent waiting on network or disk.</p>

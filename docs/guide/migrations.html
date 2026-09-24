@@ -55,7 +55,7 @@
       <p>The guest filesystem is a two-layer overlayfs:</p>
 
       <ul>
-        <li>The <strong>read-only lower</strong> is the Kali squashfs shipped inside the APK. It is re-extracted into app storage on every app update, so a fresh version of the system layer is always available after an install.</li>
+        <li>The <strong>read-only lower</strong> is the selected distribution squashfs. It is re-extracted into app storage on every app update, so a fresh version of the system layer is always available after an install.</li>
         <li>The <strong>persistent upper</strong> is an ext4 image on <code>/dev/vda</code> (the <code>storage.img</code> file in app storage). Everything you write inside the VM lives here: <code>apt install</code> results, config edits, <code>rc-update</code> changes, containers, <code>/root</code>.</li>
       </ul>
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Packages &amp; services &middot; Podroid docs</title>
-  <meta name="description" content="Kali package management with apt, what ships pre-installed in Podroid, and how to manage OpenRC services inside the VM." />
+  <meta name="description" content="Package management and service control across the ten arm64 Linux distributions supported by Podroid." />
   <link rel="icon" type="image/png" href="../logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -49,28 +49,28 @@
 
     <main class="content">
       <h1>Packages &amp; services</h1>
-      <p class="lead">The VM is a standard Kali Linux (arm64) system. Install packages with <code>apt</code> as you would on any Debian machine. Changes persist across reboots on the writable ext4 overlay.</p>
+      <p class="lead">The VM runs one of ten arm64 Linux distributions. Use that distribution's package manager; changes persist across reboots on the writable ext4 overlay.</p>
 
-      <h2>Package management with apt</h2>
-      <p>Kali's <strong>kali-rolling</strong> repository is pre-configured in <code>/etc/apt/sources.list</code>. Any package available for aarch64 can be installed directly. It is a rolling release, so <code>apt upgrade</code> keeps the whole system current.</p>
+      <h2>Package management</h2>
+      <p>The setup wizard stores the selected distribution with the VM. Kali, Debian, and Ubuntu use apt; Fedora, Rocky, and Alma use dnf; openSUSE uses zypper; Arch and Manjaro use pacman; Gentoo uses emerge.</p>
 
       <table>
         <thead>
           <tr><th>Command</th><th>What it does</th></tr>
         </thead>
         <tbody>
-          <tr><td><code>apt update</code></td><td>Refresh the package index from the repositories</td></tr>
-          <tr><td><code>apt upgrade</code></td><td>Upgrade all installed packages to the latest versions</td></tr>
-          <tr><td><code>apt install &lt;pkg&gt;</code></td><td>Install a package (and its dependencies)</td></tr>
-          <tr><td><code>apt remove &lt;pkg&gt;</code></td><td>Remove a package</td></tr>
-          <tr><td><code>apt search &lt;kw&gt;</code></td><td>Search for packages by name or description</td></tr>
-          <tr><td><code>apt show &lt;pkg&gt;</code></td><td>Show details about an installed or available package</td></tr>
+          <tr><td><code>apt update</code></td><td>Refresh apt metadata on Kali, Debian, or Ubuntu</td></tr>
+          <tr><td><code>dnf makecache --refresh</code></td><td>Refresh dnf metadata on Fedora, Rocky, or Alma</td></tr>
+          <tr><td><code>zypper --non-interactive refresh</code></td><td>Refresh zypper metadata on openSUSE</td></tr>
+          <tr><td><code>pacman -Sy --noconfirm</code></td><td>Refresh pacman metadata on Arch or Manjaro</td></tr>
+          <tr><td><code>emerge --sync --quiet</code></td><td>Refresh Portage metadata on Gentoo</td></tr>
+          <tr><td><code>&lt;manager&gt; install &lt;pkg&gt;</code></td><td>Install a package with the selected distribution's manager</td></tr>
         </tbody>
       </table>
 
       <div class="callout tip">
-        <span class="label">Kali documentation</span>
-        <p>Kali's documentation is the authoritative reference for package management, tools, and system administration. These are the best places to look:</p>
+        <span class="label">Distribution documentation</span>
+        <p>Use the selected distribution's official documentation for package and service details:</p>
         <ul>
           <li><strong>Package search:</strong> <a href="https://www.kali.org/tools/" target="_blank" rel="noopener">kali.org/tools</a></li>
           <li><strong>Kali Docs</strong> (installing, configuring, troubleshooting): <a href="https://www.kali.org/docs/" target="_blank" rel="noopener">kali.org/docs</a></li>
@@ -79,7 +79,7 @@
       </div>
 
       <h2>What ships pre-installed</h2>
-      <p>The following packages are baked into the Kali squashfs that Podroid ships. You do not need to install them.</p>
+      <p>The selected distribution's squashfs ships with the core container, networking, SSH, and terminal packages. Package names can vary by distribution.</p>
 
       <table>
         <thead>
@@ -122,8 +122,8 @@
         <p>Rootless Podman needs no daemon and works immediately. The Docker and LXC services are enabled in the <code>default</code> runlevel, so they start automatically on every boot - there is nothing to run. Confirm with <code>rc-status</code>, and use <code>rc-service docker stop</code> if you want to free memory when you are not using it.</p>
       </div>
 
-      <h2>OpenRC service management</h2>
-      <p>The VM uses <strong>OpenRC</strong> as its service manager, driven by sysvinit as PID 1 (<code>/etc/inittab</code> calls OpenRC's <code>sysinit</code>, <code>boot</code>, and <code>default</code> runlevels in order). Standard OpenRC commands work as-is:</p>
+      <h2>Service management</h2>
+      <p>Systemd distributions use <code>systemctl</code>. Kali, Debian, and Gentoo use OpenRC, where the standard <code>rc-service</code> and <code>rc-update</code> commands work as-is:</p>
 
       <pre><code><span class="c"># List all services and their status</span>
 <span class="p">~#</span> rc-status
@@ -141,7 +141,7 @@
 <span class="p">~#</span> rc-update del docker default</code></pre>
 
       <h2>Podroid system services</h2>
-      <p>These OpenRC services are part of Podroid's Kali image. Most start automatically; a few are conditional.</p>
+      <p>These Podroid services are present in every supported guest image. Their init hooks match the selected distribution.</p>
 
       <table>
         <thead>

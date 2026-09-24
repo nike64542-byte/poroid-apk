@@ -4,12 +4,12 @@ Guidance for Claude Code (and any AI assistant or new contributor) working in th
 
 ## What Is This
 
-Podroid is an Android app that runs a real **Kali Linux (arm64)** VM on stock Android 8+ (arm64) to provide rootless **Podman / Docker / LXC** containers and an in-app **X11 desktop** - no root, no custom recovery.
+Podroid is an Android app that runs real arm64 Linux distributions in a QEMU or AVF micro-VM on stock Android 8+ to provide rootless **Podman / Docker / LXC** containers and an in-app **X11 desktop** - no root, no custom recovery.
 
 - **Two interchangeable VM backends** behind one interface (`VmEngine`):
   - **QEMU (TCG)** - software emulation, the default, needs no special permission.
   - **AVF (pKVM)** - hardware-accelerated via the Android Virtualization Framework on Pixel-class devices, after a one-time `pm grant`.
-- The guest is a standard Kali root with **OpenRC as PID 1** (driven by sysvinit in `/etc/inittab`). System services live in `/etc/init.d/podroid-*` on a read-only squashfs; a persistent ext4 overlay captures user changes (`apt install`, `rc-update add`).
+- The guest is one of ten arm64 distributions with its own init system and package manager. System services live on a read-only squashfs; a persistent ext4 overlay captures user changes.
 - An embedded **Termux-based terminal**, an **X11/VNC viewer** (Xvnc + PulseAudio), and a **guest-to-Android bridge** (`podroid-notify` / `podroid-forward`) round it out.
 
 ## Key Facts
@@ -20,7 +20,7 @@ Podroid is an Android app that runs a real **Kali Linux (arm64)** VM on stock An
 | Version | `versionName` / `versionCode` in `app/build.gradle.kts` |
 | Min / target SDK | 26 (Android 8) / 36 |
 | Architecture | arm64 (`aarch64`) only |
-| Guest | Kali Linux (arm64) squashfs + persistent ext4 overlay, OpenRC PID 1 |
+| Guest | Selected arm64 distribution squashfs + persistent ext4 overlay |
 | Kernel | custom Linux, built in `nike64542-byte/poroid-kernel` |
 | QEMU | version pinned by `podroidQemuVersion` in `gradle.properties`, built in `nike64542-byte/poroid-qemu` |
 | UI | Jetpack Compose + Material 3, single Activity |
@@ -36,13 +36,13 @@ This repo is the **APK only** — it was split out of the former monorepo. The V
 artifacts are built in sibling repos and downloaded from their GitHub Releases:
 
 - **Kernel** (`vmlinuz-virt`) → `nike64542-byte/poroid-kernel`
-- **Initramfs + Kali rootfs** (`initrd.img`, `kali-rootfs.squashfs`) → `nike64542-byte/poroid-rootfs`
+- **Initramfs + ten fixed rootfs assets** (`initrd.img`, `kali-rootfs.squashfs` through `gentoo-rootfs.squashfs`) → `nike64542-byte/poroid-rootfs`
 - **QEMU + native tools** (`libqemu*.so`, `qemu-assets.tar.gz`) → `nike64542-byte/poroid-qemu`
 
 ```bash
-./fetch-artifacts.sh   # download latest VM artifacts from the 3 sibling repos
-./gradlew assembleDebug
-./gradlew installDebug
+./fetch-artifacts.sh fedora   # optional local artifact fallback
+./gradlew :app:assembleDebug
+./gradlew :app:installDebug
 ```
 
 **Unit tests:** `./gradlew :app:testDebugUnitTest` (use the `:app:` form, not the bare task).
@@ -165,7 +165,7 @@ Single-activity Compose app: `ui/navigation/NavGraph.kt` routes `setup → home 
 │       │   ├── x11/                      # X11/VNC viewer engine
 │       │   └── ui/                       # Compose: navigation, theme, screens/{setup,home,terminal,settings,x11,status,backup}, components
 │       ├── res/values, res/values-zh/    # strings (EN + Chinese)
-│       ├── assets/                       # vmlinuz-virt, initrd.img, kali-rootfs.squashfs (all gitignored, built locally),
+│       ├── assets/                       # vmlinuz-virt, initrd.img, selected rootfs (all gitignored, built locally),
 │       │                                 # qemu/, colors/ (122), fonts/ (13), ui-fonts/
 │       └── jniLibs/arm64-v8a/            # native executables (see below)
 ├── terminal-view/, terminal-emulator/   # vendored Termux fork (local Gradle modules)
@@ -199,14 +199,14 @@ The terminal emulator JNI is built from the vendored `terminal-emulator` module 
 - `-serial unix:serial.sock` (boot log) + a `virtio-serial-pci` bus carrying three virtconsoles: `terminal.sock` (hvc0), `ctrl.sock` (hvc1), `host.sock` (hvc2, the host bridge - **order matters**, the guest expects host bridge on hvc2).
 - `-qmp unix:qmp.sock` for runtime port forwards + USB.
 - RAM, CPU count, and user-editable extras (`-cpu`, `-accel`, RNG, etc.) from `SettingsRepository`.
-- Two virtio block devices: `/dev/vda` ← `storage.img` (writable ext4 overlay upper, resized on first boot), `/dev/vdb` ← `kali-rootfs.squashfs` (read-only zstd lower).
+- Two virtio block devices: `/dev/vda` is the writable ext4 overlay and `/dev/vdb` is the selected distribution's read-only zstd squashfs.
 - SLIRP networking; `-device qemu-xhci` when USB passthrough is enabled.
 
 ## Build pipelines (sibling repos)
 
 - **`poroid-kernel`** (`nike64542-byte/poroid-kernel`) - custom Linux kernel (arm64 defconfig + `podroid_kernel.config` modules + `forced_builtin.config` forcing overlayfs / netfilter / bridge / veth / tun / FUSE / IPv6 etc. to `=y`). A build-time check greps the resolved `.config` and **fails the build** if any critical option isn't `=y` (guards against silent Kconfig demotion from unmet tristate deps). Produces `vmlinuz-virt`.
 - **`poroid-qemu`** (`nike64542-byte/poroid-qemu`) - QEMU cross-compiled against the NDK. Needs `--enable-libusb` (for passthrough) and a few Android/Bionic patches; `docker build --network=host` may be required. Produces `libqemu-system-aarch64.so`, `libslirp.so`, `libpodroid-bridge.so`, `libpodroid-launcher.so` + `qemu-assets.tar.gz`.
-- **`poroid-rootfs`** (`nike64542-byte/poroid-rootfs`) - Alpine initramfs (`initrd.img`) + `build-rootfs/Dockerfile.rootfs` which fetches the Kali rolling (arm64) base image, runs `build-rootfs.sh` (apt-installs openrc + sysvinit-core + podman + crun + fuse-overlayfs + docker + lxc + openssh-server + iptables/nftables + bridge-utils, purges systemd, ships with NO default root password (passwordless: the getty auto-logs-in as root via `login -f` and sshd disables password auth), copies the OpenRC services and the cross-compiled `podroid-vsock-agent` + `podroid-hostd`, wires runlevels via direct symlinks), then `mksquashfs -comp zstd` (kernel ships `CONFIG_SQUASHFS_ZSTD=y`).
+- **`poroid-rootfs`** (`nike64542-byte/poroid-rootfs`) - publishes `initrd.img` and ten fixed arm64 rootfs assets for Kali, Debian, Ubuntu, Fedora, Rocky, Alma, openSUSE, Arch, Manjaro, and Gentoo. The app selects one asset at first-run setup; the guest supplies its own init system and package manager.
 
 ## Performance tuning (TCG path; KVM is impossible without root)
 

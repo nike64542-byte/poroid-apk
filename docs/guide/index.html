@@ -49,9 +49,9 @@
 
     <main class="content">
       <h1>Podroid documentation</h1>
-      <p class="lead">Podroid runs real Linux - Podman, Docker, LXC, and a Linux desktop - on an Android phone, with no root and no custom recovery. It boots a Kali Linux VM with a custom Linux 7.1.5 kernel inside the app.</p>
+      <p class="lead">Podroid runs real Linux - Podman, Docker, LXC, and a Linux desktop - on an Android phone, with no root and no custom recovery. It boots a selected arm64 distribution with a custom Linux kernel inside the app.</p>
 
-      <p>There are two ways the VM runs. By default it uses <strong>QEMU</strong> with software CPU emulation (TCG), which works on any ARM64 Android 8+ device. On recent Pixel devices that ship pKVM, Podroid can instead use the <strong>Android Virtualization Framework (AVF)</strong> for near-native speed. Either way you get the same Kali guest, the same terminal, and the same in-app X11 viewer for GUI apps.</p>
+      <p>There are two ways the VM runs. By default it uses <strong>QEMU</strong> with software CPU emulation (TCG), which works on any ARM64 Android 8+ device. On recent Pixel devices that ship pKVM, Podroid can instead use the <strong>Android Virtualization Framework (AVF)</strong> for near-native speed. Either way you get the selected Linux guest, the same terminal, and the same in-app X11 viewer for GUI apps.</p>
 
       <div class="callout note">
         <span class="label">No root required</span>
@@ -61,7 +61,7 @@
       <h2>What you can do with it</h2>
       <ul>
         <li><strong>Run containers</strong> - rootless Podman is wired up out of the box; Docker and LXC are pre-installed. Self-host Pi-hole, Gitea, code-server, Vaultwarden and more.</li>
-        <li><strong>A real Linux shell</strong> - a full Kali system with <code>apt</code> package management that persists across reboots. SSH in from your laptop on the same Wi-Fi.</li>
+        <li><strong>A real Linux shell</strong> - a full arm64 Linux system with the selected distribution's package manager, persisting across reboots. SSH in from your laptop on the same Wi-Fi.</li>
         <li><strong>GUI Linux apps</strong> - install a desktop or single X11 apps and view them in the app, with touch, trackpad, external keyboard and mouse, and audio.</li>
         <li><strong>Learn Linux &amp; containers</strong> - cgroups, namespaces, overlayfs, netfilter, OpenRC services - all on a device you already own.</li>
       </ul>

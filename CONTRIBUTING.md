@@ -9,13 +9,13 @@ Before you start, please skim [`CLAUDE.md`](CLAUDE.md). It documents the VM-engi
 This repo is the **APK only**. The VM components are split into sibling repos:
 
 - [poroid-kernel](https://github.com/nike64542-byte/poroid-kernel) — custom Linux kernel (`vmlinuz-virt`)
-- [poroid-rootfs](https://github.com/nike64542-byte/poroid-rootfs) — Alpine initramfs (`initrd.img`) + Kali rootfs (`kali-rootfs.squashfs`)
+- [poroid-rootfs](https://github.com/nike64542-byte/poroid-rootfs) — initramfs plus ten arm64 rootfs assets
 - [poroid-qemu](https://github.com/nike64542-byte/poroid-qemu) — QEMU + native tools (`libqemu*.so`, `qemu-assets.tar.gz`)
 
 ```sh
 git clone https://github.com/nike64542-byte/poroid-apk.git
 cd poroid-apk
-./fetch-artifacts.sh   # download latest VM artifacts from the 3 sibling repos
+./fetch-artifacts.sh fedora   # download one selected rootfs for a local build
 ```
 
 You will need:
@@ -25,12 +25,12 @@ You will need:
 
 ## Build pipeline
 
-The Android app builds with Gradle. VM artifacts (kernel, rootfs, QEMU) are
-fetched from the sibling repos' GitHub Releases by `./fetch-artifacts.sh`
-(or by CI), then bundled into the APK's `assets/` + `jniLibs/`:
+The Android app builds with Gradle. VM artifacts (kernel, selected rootfs, QEMU) are fetched from the sibling
+repos' GitHub Releases by `./fetch-artifacts.sh` (or by CI), then bundled into
+the APK's `assets/` + `jniLibs/`:
 
 ```sh
-./fetch-artifacts.sh     # download kernel/rootfs/qemu artifacts
+./fetch-artifacts.sh fedora   # download kernel/rootfs/qemu artifacts
 ./gradlew assembleDebug  # build the APK
 ./gradlew installDebug   # build + install on a connected device
 ```

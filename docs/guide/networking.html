@@ -49,7 +49,7 @@
 
     <main class="content">
       <h1>Networking &amp; port forwarding</h1>
-      <p class="lead">The Kali guest has full outbound internet access from first boot. Inbound access - SSH, VNC, container services - works through port forwarding, with a few rules injected automatically and the rest configured in Settings.</p>
+      <p class="lead">The selected Linux guest has full outbound internet access from first boot. Inbound access - SSH, VNC, container services - works through port forwarding, with a few rules injected automatically and the rest configured in Settings.</p>
 
       <h2>Guest network: SLIRP user-mode</h2>
       <p>On the QEMU backend the guest network is provided by <strong>SLIRP</strong>, a userspace TCP/IP stack embedded inside QEMU. No root, no kernel TUN/TAP device, and no host-side network interface are involved. From inside the guest the network looks like a small NAT:</p>

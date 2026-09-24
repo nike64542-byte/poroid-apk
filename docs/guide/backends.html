@@ -97,7 +97,7 @@
       <h2>How Auto-selection works</h2>
       <p>When the backend is set to Auto, Podroid checks four conditions at startup: (1) the <code>android.software.virtualization_framework</code> feature is present, (2) <code>MANAGE_VIRTUAL_MACHINE</code> is granted, (3) <code>USE_CUSTOM_VIRTUAL_MACHINE</code> is granted, and (4) the device advertises support for <strong>non-protected VMs</strong>. All four must pass. If any fails, Podroid falls back to QEMU and the VM starts with software emulation - announced in the same places as a forced-AVF fallback: a Home notice, a Status suffix, and a caption under the AVF chip in Settings.</p>
 
-      <p>Condition (4) is the non-obvious one. pKVM can operate in two modes: <em>protected</em> (guest memory is encrypted and the host cannot inspect it) and <em>non-protected</em>. Podroid's guest image is a standard Kali Linux squashfs - it does not meet the signing and measurement requirements for protected VMs. A device that only advertises protected VM support cannot run Podroid's image under AVF, so Auto falls back to QEMU on such devices.</p>
+      <p>Condition (4) is the non-obvious one. pKVM can operate in two modes: <em>protected</em> (guest memory is encrypted and the host cannot inspect it) and <em>non-protected</em>. Podroid's selected distribution squashfs does not meet the signing and measurement requirements for protected VMs. A device that only advertises protected VM support cannot run Podroid's image under AVF, so Auto falls back to QEMU on such devices.</p>
 
       <div class="callout note">
         <span class="label">Protected-only device and want hardware speed? You'll need root.</span>
