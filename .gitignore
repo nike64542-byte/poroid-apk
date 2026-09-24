@@ -27,6 +27,15 @@ local.properties
 app/src/main/assets/vmlinuz-virt
 app/src/main/assets/initrd.img
 app/src/main/assets/kali-rootfs.squashfs
+app/src/main/assets/debian-rootfs.squashfs
+app/src/main/assets/ubuntu-rootfs.squashfs
+app/src/main/assets/fedora-rootfs.squashfs
+app/src/main/assets/rocky-rootfs.squashfs
+app/src/main/assets/alma-rootfs.squashfs
+app/src/main/assets/opensuse-rootfs.squashfs
+app/src/main/assets/arch-rootfs.squashfs
+app/src/main/assets/manjaro-rootfs.squashfs
+app/src/main/assets/gentoo-rootfs.squashfs
 app/src/main/assets/qemu/
 app/src/main/jniLibs/
 

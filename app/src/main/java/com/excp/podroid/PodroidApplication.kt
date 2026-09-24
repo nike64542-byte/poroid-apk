@@ -10,6 +10,7 @@ package com.excp.podroid
 import android.app.Application
 import android.os.Build
 import android.util.Log
+import com.excp.podroid.data.repository.Distro
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -101,32 +102,28 @@ class PodroidApplication : Application() {
             // background coroutine (not the main thread); the VM launch path
             // awaits awaitAssetsReady.
             //
-            // Download-first source (the APK does NOT bundle VM images):
-            //   * The setup wizard writes vmlinuz-virt / initrd.img /
-            //     kali-rootfs.squashfs / qemu-assets (unpacked .so + qemu/)
-            //     to filesDir (SystemImageRepository.downloadAll). A present,
-            //     non-empty downloaded file must not be clobbered by a bundled
-            //     asset on upgrade (forceCopy) — downloads win.
-            //   * qemu/ + the three images MAY still be bundled by a local
-            //     build that ran fetch-artifacts.sh before assembling; extract
-            //     those as a fallback so such an APK still boots.
-            //   * Missing on both sides is not an error at cold-start — the
-            //     engines' own size-check fails the VM launch with a clear
-            //     message instead.
-            val downloadedBlocks: Map<String, Boolean> = mapOf(
-                "vmlinuz-virt" to isDownloadedFile(File(filesDir, "vmlinuz-virt")),
-                "initrd.img" to isDownloadedFile(File(filesDir, "initrd.img")),
-                "kali-rootfs.squashfs" to isDownloadedFile(File(filesDir, "kali-rootfs.squashfs")),
-            )
+            val downloadedBlocks: Map<String, Boolean> = buildMap {
+                put("vmlinuz-virt", isDownloadedFile(File(filesDir, "vmlinuz-virt")))
+                put("initrd.img", isDownloadedFile(File(filesDir, "initrd.img")))
+                Distro.values().forEach { distro ->
+                    put(distro.asset, isDownloadedFile(File(filesDir, distro.asset)))
+                }
+            }
             fun skipDownloaded(assetPath: String): Boolean =
                 downloadedBlocks[assetPath] == true
 
-            val tasks: List<() -> Unit> = listOf(
+            val bundledAssets = assets.list("")?.toSet().orEmpty()
+            val tasks = mutableListOf<() -> Unit>(
                 { copyAssetDir("qemu", filesDir, forceCopy) },
                 { if (!skipDownloaded("vmlinuz-virt")) copyAssetQuiet("vmlinuz-virt", File(filesDir, "vmlinuz-virt"), forceCopy) },
                 { if (!skipDownloaded("initrd.img")) copyAssetQuiet("initrd.img", File(filesDir, "initrd.img"), forceCopy) },
-                { if (!skipDownloaded("kali-rootfs.squashfs")) copyAssetQuiet("kali-rootfs.squashfs", File(filesDir, "kali-rootfs.squashfs"), forceCopy) },
             )
+            for (distro in Distro.values()) {
+                if (distro.asset in bundledAssets) {
+                    tasks += { if (!skipDownloaded(distro.asset)) copyAssetQuiet(distro.asset, File(filesDir, distro.asset), forceCopy) }
+                }
+            }
+
             val pool = Executors.newFixedThreadPool(tasks.size.coerceAtMost(4))
             var allSucceeded = true
             try {
