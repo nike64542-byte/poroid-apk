@@ -44,8 +44,8 @@ jobs:
         run: |
           export ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
-          yes | sdkmanager --licenses || true
-          sdkmanager "platform-tools" "build-tools;34.0.0" "platforms;android-34" || true
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "build-tools;35.0.0" "platforms;android-36"
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
 
@@ -66,6 +66,12 @@ jobs:
           echo "安装后首次启动，在设置向导中粘贴下载链接，App 会自动下载。"
           echo "若本仓库在本地构建前运行了 ./fetch-artifacts.sh，"
           echo "这些文件会被打进 APK 作为兜底。"
+
+      - name: 验证 rootfs Release 资产
+        run: bash scripts/verify-rootfs-assets.sh
+
+      - name: 运行 JVM 单元测试
+        run: ./gradlew :app:testDebugUnitTest
 
       - name: 构建 APK
         run: |
