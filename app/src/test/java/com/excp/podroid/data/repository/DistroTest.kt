@@ -6,6 +6,34 @@ import org.junit.Test
 
 class DistroTest {
 
+    private val expected = mapOf(
+        Distro.KALI to Triple("kali-rootfs.squashfs", "kali-rootfs-rolling.squashfs", "apt-get update"),
+        Distro.DEBIAN to Triple("debian-rootfs.squashfs", "debian-rootfs-12.squashfs", "apt-get update"),
+        Distro.UBUNTU to Triple("ubuntu-rootfs.squashfs", "ubuntu-rootfs-24.04.squashfs", "apt-get update"),
+        Distro.FEDORA to Triple("fedora-rootfs.squashfs", "fedora-rootfs-42.squashfs", "dnf makecache --refresh"),
+        Distro.ROCKY to Triple("rocky-rootfs.squashfs", "rocky-rootfs-9.squashfs", "dnf makecache --refresh"),
+        Distro.ALMA to Triple("alma-rootfs.squashfs", "alma-rootfs-9.squashfs", "dnf makecache --refresh"),
+        Distro.OPENSUSE to Triple("opensuse-rootfs.squashfs", "opensuse-rootfs-15.6.squashfs", "zypper --non-interactive refresh"),
+        Distro.ARCH to Triple("arch-rootfs.squashfs", "arch-rootfs-rolling.squashfs", "pacman -Sy --noconfirm"),
+        Distro.MANJARO to Triple("manjaro-rootfs.squashfs", "manjaro-rootfs-rolling.squashfs", "pacman -Sy --noconfirm"),
+        Distro.GENTOO to Triple("gentoo-rootfs.squashfs", "gentoo-rootfs-rolling.squashfs", "emerge --sync --quiet"),
+    )
+
+    @Test
+    fun everyDistroHasStableVersionedAssetAndUpdateCommand() {
+        assertEquals(expected, Distro.values().associateWith { Triple(it.asset, it.versionedAsset, it.packageUpdateCommand) })
+    }
+
+    @Test
+    fun versionedPresetUrlUsesTheSameReleaseBase() {
+        for (distro in Distro.values()) {
+            assertEquals(
+                "${SystemImageRepository.ROOTFS_BASE_URL}/${distro.versionedAsset}",
+                SystemImageRepository.versionedPresetUrl(distro),
+            )
+        }
+    }
+
     @Test
     fun assetNamesMatchReleaseAssets() {
         assertEquals("kali-rootfs.squashfs", Distro.KALI.asset)

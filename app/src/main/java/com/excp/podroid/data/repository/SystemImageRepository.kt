@@ -23,17 +23,21 @@ import javax.inject.Singleton
  * downloaded per install; switching means Settings → Reset VM (wipe) and
  * running the wizard again — there is no runtime distro switch.
  */
-enum class Distro(val asset: String) {
-    KALI("kali-rootfs.squashfs"),
-    DEBIAN("debian-rootfs.squashfs"),
-    UBUNTU("ubuntu-rootfs.squashfs"),
-    FEDORA("fedora-rootfs.squashfs"),
-    ROCKY("rocky-rootfs.squashfs"),
-    ALMA("alma-rootfs.squashfs"),
-    OPENSUSE("opensuse-rootfs.squashfs"),
-    ARCH("arch-rootfs.squashfs"),
-    MANJARO("manjaro-rootfs.squashfs"),
-    GENTOO("gentoo-rootfs.squashfs"),
+enum class Distro(
+    val asset: String,
+    val versionedAsset: String,
+    val packageUpdateCommand: String,
+) {
+    KALI("kali-rootfs.squashfs", "kali-rootfs-rolling.squashfs", "apt-get update"),
+    DEBIAN("debian-rootfs.squashfs", "debian-rootfs-12.squashfs", "apt-get update"),
+    UBUNTU("ubuntu-rootfs.squashfs", "ubuntu-rootfs-24.04.squashfs", "apt-get update"),
+    FEDORA("fedora-rootfs.squashfs", "fedora-rootfs-42.squashfs", "dnf makecache --refresh"),
+    ROCKY("rocky-rootfs.squashfs", "rocky-rootfs-9.squashfs", "dnf makecache --refresh"),
+    ALMA("alma-rootfs.squashfs", "alma-rootfs-9.squashfs", "dnf makecache --refresh"),
+    OPENSUSE("opensuse-rootfs.squashfs", "opensuse-rootfs-15.6.squashfs", "zypper --non-interactive refresh"),
+    ARCH("arch-rootfs.squashfs", "arch-rootfs-rolling.squashfs", "pacman -Sy --noconfirm"),
+    MANJARO("manjaro-rootfs.squashfs", "manjaro-rootfs-rolling.squashfs", "pacman -Sy --noconfirm"),
+    GENTOO("gentoo-rootfs.squashfs", "gentoo-rootfs-rolling.squashfs", "emerge --sync --quiet"),
 }
 
 /**
@@ -79,6 +83,7 @@ class SystemImageRepository @Inject constructor(
 
         /** Preset rootfs URL for a distro on the shared poroid-rootfs release. */
         fun presetUrl(distro: Distro): String = "$ROOTFS_BASE_URL/${distro.asset}"
+        fun versionedPresetUrl(distro: Distro): String = "$ROOTFS_BASE_URL/${distro.versionedAsset}"
     }
 
     private val prefs = context.dataStore.data
