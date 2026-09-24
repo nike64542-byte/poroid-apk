@@ -27,6 +27,7 @@ package com.excp.podroid.engine
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
+import com.excp.podroid.data.repository.Distro
 import com.excp.podroid.data.repository.PortForwardRule
 import com.excp.podroid.data.repository.SettingsRepository
 import com.excp.podroid.util.HostMetrics
@@ -170,10 +171,10 @@ class QemuEngine @Inject constructor(
         _runningSinceMs = System.currentTimeMillis()
         persistBootDuration()
         autoStartBridge()
-        // Run first apt update on fresh install
         ioScope?.launch {
-            if (!settingsRepository.isFirstAptUpdateDone()) {
-                runFirstAptUpdate()
+            val distro = systemImageRepository.distro()
+            if (!settingsRepository.isFirstPackageUpdateDone(distro)) {
+                runFirstPackageUpdate(distro)
             }
         }
     }
@@ -594,23 +595,16 @@ class QemuEngine @Inject constructor(
         deleteExtraTabSockets()
     }
 
-    /**
-     * Run apt update on first boot after fresh install. Sends the command
-     * through the terminal session and waits for completion, then marks
-     * the update as done in settings.
-     */
-    private suspend fun runFirstAptUpdate() {
+    private suspend fun runFirstPackageUpdate(distro: Distro) {
         val session = _terminalSession ?: return
         try {
-            Log.d(TAG, "Running first apt update...")
-            // Send apt update command
-            session.write("apt update\n".toByteArray(), 0, 9)
-            // Wait for command to complete (apt update typically takes 5-30 seconds)
+            val bytes = "${distro.packageUpdateCommand}\n".toByteArray()
+            session.write(bytes, 0, bytes.size)
             kotlinx.coroutines.delay(15_000)
-            settingsRepository.markFirstAptUpdateDone()
-            Log.d(TAG, "First apt update completed")
+            settingsRepository.markFirstPackageUpdateDone(distro)
+            Log.d(TAG, "First package update completed for ${distro.name}")
         } catch (e: Exception) {
-            Log.w(TAG, "First apt update failed", e)
+            Log.w(TAG, "First package update failed for ${distro.name}", e)
         }
     }
 

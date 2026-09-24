@@ -21,6 +21,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import com.excp.podroid.data.repository.PortForwardRule
 import com.excp.podroid.data.repository.SettingsRepository
+import com.excp.podroid.data.repository.SystemImageRepository
 import com.excp.podroid.engine.BootStageDetector
 import com.excp.podroid.engine.ProxySessionClient
 import com.excp.podroid.engine.QmpClient
@@ -55,6 +56,7 @@ import javax.inject.Singleton
 class AvfEngine @Inject constructor(
     @ApplicationContext private val context: Context,
     private val settingsRepository: SettingsRepository,
+    private val systemImageRepository: SystemImageRepository,
 ) : VmEngine {
 
     companion object {
@@ -1024,7 +1026,7 @@ class AvfEngine @Inject constructor(
             require(it.exists()) { "initrd missing at ${it.absolutePath}" }
         }
         val storage = ensureStorageImage(config.storageSizeGb)
-        val squashfs = File(context.filesDir, "kali-rootfs.squashfs").also {
+        val squashfs = systemImageRepository.rootfsFile().also {
             require(it.exists()) { "rootfs missing at ${it.absolutePath}" }
         }
 
