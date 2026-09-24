@@ -63,12 +63,15 @@ jobs:
       - name: 说明 — VM 镜像不打包
         run: |
           echo "APK 不包含内核/initramfs/rootfs/QEMU（保持安装包小）。"
-          echo "安装后首次启动，在设置向导中粘贴下载链接，App 会自动下载。"
+          echo "首次启动时，向导会自动下载所需镜像。"
           echo "若本仓库在本地构建前运行了 ./fetch-artifacts.sh，"
           echo "这些文件会被打进 APK 作为兜底。"
 
       - name: 验证 rootfs Release 资产
         run: bash scripts/verify-rootfs-assets.sh
+
+      - name: 验证设置向导契约
+        run: sh scripts/test-setup-wizard.sh
 
       - name: 运行 JVM 单元测试
         run: ./gradlew :app:testDebugUnitTest

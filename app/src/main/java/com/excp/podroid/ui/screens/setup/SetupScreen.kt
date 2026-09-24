@@ -34,11 +34,9 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowHeightSizeClass
@@ -60,7 +58,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
@@ -210,6 +207,7 @@ fun SetupScreen(
                     selectedGb = selectedGb,
                     loadBalanceEnabled = loadBalanceEnabled,
                     onSelect = { selectedGb = it },
+                    onBack = { scope.launch { pagerState.animateScrollToPage(0) } },
                     onNext = { scope.launch { pagerState.animateScrollToPage(2) } },
                 )
                 2 -> VmConfigPage(
@@ -417,33 +415,9 @@ private fun SystemImageDownloadPage(
     viewModel: SetupViewModel,
     onNext: () -> Unit,
 ) {
-    var kernel by rememberSaveable { mutableStateOf("") }
-    var initrd by rememberSaveable { mutableStateOf("") }
-    var rootfs by rememberSaveable { mutableStateOf("") }
-    var qemu by rememberSaveable { mutableStateOf("") }
-    val kernelUrl by viewModel.kernelUrl.collectAsStateWithLifecycle()
-    val initrdUrl by viewModel.initrdUrl.collectAsStateWithLifecycle()
-    val rootfsUrl by viewModel.rootfsUrl.collectAsStateWithLifecycle()
-    val qemuUrl by viewModel.qemuUrl.collectAsStateWithLifecycle()
+    val downloaded by viewModel.downloaded.collectAsStateWithLifecycle()
     val downloadState by viewModel.downloadState.collectAsStateWithLifecycle()
     val distro by viewModel.distro.collectAsStateWithLifecycle()
-
-    // Seed once from the persisted defaults (empty fields until the flow emits).
-    LaunchedEffect(kernelUrl) {
-        if (kernel.isEmpty() && !kernelUrl.isNullOrEmpty()) kernel = kernelUrl!!
-    }
-    LaunchedEffect(initrdUrl) {
-        if (initrd.isEmpty() && !initrdUrl.isNullOrEmpty()) initrd = initrdUrl!!
-    }
-    // Unlike the other three, the rootfs URL follows the flow unconditionally:
-    // a distro switch repoints it at the new preset. User edits stay put — they
-    // write to the repository but never re-emit on _rootfsUrl.
-    LaunchedEffect(rootfsUrl) {
-        if (!rootfsUrl.isNullOrEmpty()) rootfs = rootfsUrl!!
-    }
-    LaunchedEffect(qemuUrl) {
-        if (qemu.isEmpty() && !qemuUrl.isNullOrEmpty()) qemu = qemuUrl!!
-    }
 
     SetupPageLayout(
         windowSizeClass = windowSizeClass,
@@ -453,8 +427,9 @@ private fun SystemImageDownloadPage(
         bottomBar  = {
             SetupNavBar(
                 onBack = {},
-                onNext = onNext,
+                onNext = { if (downloaded) onNext() },
                 nextLabel = stringResource(R.string.continue_label),
+                nextEnabled = downloaded,
             )
         },
     ) {
@@ -482,42 +457,6 @@ private fun SystemImageDownloadPage(
                 )
             }
         }
-        Spacer(Modifier.height(PodroidTokens.Spacing.XL))
-        OutlinedTextField(
-            value = kernel,
-            onValueChange = { kernel = it; viewModel.updateUrls(kernel, initrd, rootfs, qemu) },
-            label = { Text(stringResource(R.string.system_image_kernel_url)) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-        )
-        Spacer(Modifier.height(PodroidTokens.Spacing.SM))
-        OutlinedTextField(
-            value = initrd,
-            onValueChange = { initrd = it; viewModel.updateUrls(kernel, initrd, rootfs, qemu) },
-            label = { Text(stringResource(R.string.system_image_initrd_url)) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-        )
-        Spacer(Modifier.height(PodroidTokens.Spacing.SM))
-        OutlinedTextField(
-            value = rootfs,
-            onValueChange = { rootfs = it; viewModel.updateUrls(kernel, initrd, rootfs, qemu) },
-            label = { Text(stringResource(R.string.system_image_rootfs_url)) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-        )
-        Spacer(Modifier.height(PodroidTokens.Spacing.SM))
-        OutlinedTextField(
-            value = qemu,
-            onValueChange = { qemu = it; viewModel.updateUrls(kernel, initrd, rootfs, qemu) },
-            label = { Text(stringResource(R.string.system_image_qemu_url)) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-        )
         Spacer(Modifier.height(PodroidTokens.Spacing.LG))
 
         when (val state = downloadState) {
@@ -548,7 +487,7 @@ private fun SystemImageDownloadPage(
             }
             is DownloadUiState.Error -> {
                 Text(
-                    text = stringResource(R.string.system_image_download_failed, state.message),
+                    text = stringResource(R.string.system_image_download_failed_generic),
                     style = MaterialTheme.typography.bodyMedium,
                     color = PodroidTokens.Amber,
                 )
@@ -577,6 +516,7 @@ private fun StoragePage(
     selectedGb: Int,
     loadBalanceEnabled: Boolean,
     onSelect: (Int) -> Unit,
+    onBack: () -> Unit,
     onNext: () -> Unit,
 ) {
     SetupPageLayout(
@@ -584,7 +524,13 @@ private fun StoragePage(
         stepLabel  = stringResource(R.string.step_2_of_6),
         title      = stringResource(R.string.persistent_storage),
         description = stringResource(R.string.storage_description),
-        bottomBar  = { SetupNextBar(onNext = onNext) },
+        bottomBar  = {
+            SetupNavBar(
+                onBack = onBack,
+                onNext = onNext,
+                nextLabel = stringResource(R.string.continue_label),
+            )
+        },
     ) {
         VmStorageChips(
             currentGb = selectedGb,
@@ -841,17 +787,11 @@ private fun PermissionsPage(
 // ── Setup bottom bars ─────────────────────────────────────────────────────────
 
 @Composable
-private fun SetupNextBar(onNext: () -> Unit) {
-    Column(modifier = Modifier.padding(vertical = PodroidTokens.Spacing.LG)) {
-        PodroidPrimaryButton(text = stringResource(R.string.continue_label), onClick = onNext)
-    }
-}
-
-@Composable
 private fun SetupNavBar(
     onBack: () -> Unit,
     onNext: () -> Unit,
     nextLabel: String,
+    nextEnabled: Boolean = true,
 ) {
     Row(
         modifier = Modifier
@@ -860,6 +800,11 @@ private fun SetupNavBar(
         horizontalArrangement = Arrangement.spacedBy(PodroidTokens.Spacing.SM),
     ) {
         PodroidGhostButton(text = stringResource(R.string.back), onClick = onBack, modifier = Modifier.weight(1f))
-        PodroidPrimaryButton(text = nextLabel, onClick = onNext, modifier = Modifier.weight(2f))
+        PodroidPrimaryButton(
+            text = nextLabel,
+            onClick = onNext,
+            modifier = Modifier.weight(2f),
+            enabled = nextEnabled,
+        )
     }
 }

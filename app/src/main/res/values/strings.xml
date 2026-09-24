@@ -246,15 +246,12 @@
 
     <!-- System image download -->
     <string name="system_image_download">Download system image</string>
-    <string name="system_image_download_description">Enter the download URLs for the kernel, initramfs and rootfs. They will be downloaded and used to boot the VM.</string>
-    <string name="system_image_kernel_url">Kernel URL (vmlinuz-virt)</string>
-    <string name="system_image_initrd_url">Initramfs URL (initrd.img)</string>
-    <string name="system_image_rootfs_url">Rootfs URL</string>
-    <string name="system_image_qemu_url">QEMU URL (qemu-assets.tar.gz)</string>
+    <string name="system_image_download_description">Choose a Linux distribution and download the images required to start the VM.</string>
     <string name="system_image_download_btn">Download</string>
     <string name="system_image_download_in_progress">Downloading system images…</string>
     <string name="system_image_download_done">System images downloaded.</string>
     <string name="system_image_download_failed">Download failed: %1$s</string>
+    <string name="system_image_download_failed_generic">Download failed. Check your connection and try again.</string>
 
     <!-- Dialogs -->
     <string name="update_available">Update available</string>

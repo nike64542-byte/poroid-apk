@@ -23,15 +23,6 @@ class SetupViewModel @Inject constructor(
     private val _setupComplete = MutableStateFlow(false)
     val setupComplete: StateFlow<Boolean> = _setupComplete.asStateFlow()
 
-    private val _kernelUrl = MutableStateFlow<String?>(null)
-    val kernelUrl: StateFlow<String?> = _kernelUrl.asStateFlow()
-    private val _initrdUrl = MutableStateFlow<String?>(null)
-    val initrdUrl: StateFlow<String?> = _initrdUrl.asStateFlow()
-    private val _rootfsUrl = MutableStateFlow<String?>(null)
-    val rootfsUrl: StateFlow<String?> = _rootfsUrl.asStateFlow()
-    private val _qemuUrl = MutableStateFlow<String?>(null)
-    val qemuUrl: StateFlow<String?> = _qemuUrl.asStateFlow()
-
     private val _distro = MutableStateFlow(Distro.KALI)
     val distro: StateFlow<Distro> = _distro.asStateFlow()
 
@@ -43,51 +34,37 @@ class SetupViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            _kernelUrl.value = systemImageRepository.kernelUrl()
-            _initrdUrl.value = systemImageRepository.initrdUrl()
-            _rootfsUrl.value = systemImageRepository.rootfsUrl()
-            _qemuUrl.value = systemImageRepository.qemuUrl()
             _distro.value = systemImageRepository.distro()
             _downloaded.value = systemImageRepository.isDownloaded()
         }
     }
 
-    /** Persists URL edits immediately; clears the downloaded flag so a URL change re-downloads. */
-    fun updateUrls(kernel: String, initrd: String, rootfs: String, qemu: String) {
-        viewModelScope.launch {
-            systemImageRepository.setUrls(kernel, initrd, rootfs, qemu)
-            systemImageRepository.markDownloaded(false)
-            _downloaded.value = false
-        }
-    }
-
     /**
-     * First-run-only distro pick: persists the selection, repoints the rootfs
-     * URL at its preset (emits so the wizard field follows), and clears the
+     * First-run-only distro pick: persists the selection and clears the
      * downloaded flag. Runtime switching is not supported — Settings →
      * Reset VM wipes DataStore and re-runs this wizard.
      */
     fun selectDistro(distro: Distro) {
         _distro.value = distro
+        _downloaded.value = false
+        _downloadState.value = DownloadUiState.Idle
         viewModelScope.launch {
             systemImageRepository.setDistro(distro)
-            _rootfsUrl.value = systemImageRepository.rootfsUrl()
         }
     }
 
     fun startDownload() {
-        val kernel = _kernelUrl.value.orEmpty().trim()
-        val initrd = _initrdUrl.value.orEmpty().trim()
-        val rootfs = _rootfsUrl.value.orEmpty().trim()
-        val qemu = _qemuUrl.value.orEmpty().trim()
-        if (kernel.isEmpty() || initrd.isEmpty() || rootfs.isEmpty() || qemu.isEmpty()) {
-            _downloadState.value = DownloadUiState.Error("四个下载地址都需要填写")
-            return
-        }
         viewModelScope.launch {
+            val kernel = systemImageRepository.kernelUrl()
+            val initrd = systemImageRepository.initrdUrl()
+            val rootfs = systemImageRepository.rootfsUrl()
+            val qemu = systemImageRepository.qemuUrl()
+            if (kernel.isBlank() || initrd.isBlank() || rootfs.isBlank() || qemu.isBlank()) {
+                _downloadState.value = DownloadUiState.Error("下载准备失败")
+                return@launch
+            }
             _downloadState.value = DownloadUiState.Downloading(0f)
             try {
-                // First persist URLs so a crash still records what the user chose.
                 systemImageRepository.setUrls(kernel, initrd, rootfs, qemu)
                 val bytes = systemImageRepository.downloadAll { progress ->
                     _downloadState.value = DownloadUiState.Downloading(progress)
@@ -96,8 +73,8 @@ class SetupViewModel @Inject constructor(
                 _downloadState.value = DownloadUiState.Done(bytes)
             } catch (c: kotlinx.coroutines.CancellationException) {
                 throw c
-            } catch (e: Exception) {
-                _downloadState.value = DownloadUiState.Error(e.message ?: "下载失败")
+            } catch (_: Exception) {
+                _downloadState.value = DownloadUiState.Error("下载失败")
             }
         }
     }

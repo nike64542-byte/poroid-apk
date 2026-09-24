@@ -44,8 +44,8 @@ enum class Distro(
  * Manages the versioned VM-image downloads (kernel, initramfs, rootfs, QEMU).
  *
  * Nothing is bundled in the APK — the first-run wizard picks a [Distro]
- * (seeding its preset rootfs URL on the shared poroid-rootfs release; all four
- * URLs stay user-editable) and this repository streams them to
+ * (seeding its preset rootfs URL on the shared poroid-rootfs release) and this
+ * repository streams them to
  * [context.filesDir] where the VM engines already look:
  *
  *   - kernel  -> filesDir/vmlinuz-virt
