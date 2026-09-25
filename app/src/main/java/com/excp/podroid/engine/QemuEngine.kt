@@ -432,6 +432,7 @@ class QemuEngine @Inject constructor(
                     VmState.Error("QEMU failed to create sockets within ${SOCKET_READY_TIMEOUT_MS / 1000}s")
                 proc.destroy()
             } else {
+                autoStartBridge()
                 // Primary readiness is the detector's "Ready!" (now reliable).
                 // This is only a safety net so the UI never strands in Starting:
                 // generous enough to clear a worst-case first boot (~56s, dropbear

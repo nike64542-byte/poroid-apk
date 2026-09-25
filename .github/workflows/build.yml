@@ -73,6 +73,9 @@ jobs:
       - name: 验证设置向导契约
         run: sh scripts/test-setup-wizard.sh
 
+      - name: 验证 QEMU 主终端桥接时序
+        run: sh scripts/test-qemu-terminal-bridge.sh
+
       - name: 运行 JVM 单元测试
         run: ./gradlew :app:testDebugUnitTest
 
